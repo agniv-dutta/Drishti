@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, Tuple
 from app.agents.base_agent import BaseAgent
 from app.agents.prompts import STRATEGY_SELECTOR_SYSTEM_PROMPT
 from app.core.config import get_settings
-from app.ml.data_preprocessor import build_features
+from app.ml.data_preprocessor import build_features, build_strategy_features
 from app.ml.recovery_classifier import get_recovery_classifier
 from app.models.audit import AuditEventType
 from app.models.payment import PaymentTransaction
@@ -56,14 +56,26 @@ class StrategistAgent(BaseAgent):
             high_value_threshold_inr=settings.high_value_threshold_inr,
         )
 
-        # Trained AutoML classifier can override the rule-based choice when confident.
+        # The trained strategy classifier overrides the heuristic choice only when confident.
         if override_strategy is None and classifier.using_ml_model:
-            ml_ranked = classifier.predict_proba(txn, features)
-            if ml_ranked and ml_ranked[0][1] >= 0.60:
-                try:
-                    strategy = RecoveryStrategy(ml_ranked[0][0])
-                except ValueError:
-                    pass  # unknown class label -> keep heuristic choice
+            metadata = txn.meta
+            strategy_features = build_strategy_features(
+                decline_reason=(txn.failure_reason.value if txn.failure_reason else "unknown"),
+                customer_segment=metadata.get("customer_segment", "new"),
+                failure_count=metadata.get("failure_count", max(txn.attempt_number - 1, 0)),
+                time_since_last_attempt=metadata.get("time_since_last_attempt", 0.0),
+                customer_communication_preference=metadata.get(
+                    "customer_communication_preference", "none"
+                ),
+            )
+            prediction = classifier.predict_strategy(strategy_features)
+            strategy = {
+                "retry": RecoveryStrategy.SMART_RETRY,
+                "sms": RecoveryStrategy.NUDGE_DIGITAL,
+                "call": RecoveryStrategy.HIGH_TOUCH_VOICE,
+                "offer": RecoveryStrategy.NUDGE_DIGITAL,
+                "escalate": RecoveryStrategy.CRM_HUMAN_ESCALATION,
+            }.get(prediction["recommended_strategy"], strategy)
 
         steps = self._build_steps(strategy, analysis, ranked, txn.amount_inr, settings.high_value_threshold_inr)
         total_cost = sum(step.estimated_cost_paise for step in steps)

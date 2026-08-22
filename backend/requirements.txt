@@ -31,10 +31,11 @@ redis==5.2.1
 hiredis==3.0.0
 
 # ---- LLM & agentic orchestration ----
-anthropic==0.42.0
+openai==1.61.0
 langchain==0.3.14
 langchain-core==0.3.29
 langgraph==0.2.60
+langgraph-checkpoint-sqlite==2.0.8
 
 # ---- Structured logging ----
 structlog==24.4.0
@@ -43,6 +44,7 @@ structlog==24.4.0
 numpy==1.26.4
 pandas==2.2.3
 scikit-learn==1.6.0
+xgboost==2.1.3
 joblib==1.4.2
 
 # ---- Testing ----

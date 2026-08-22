@@ -9,8 +9,10 @@ the agent pipeline is testable without credentials.
 from __future__ import annotations
 
 import base64
+import asyncio
 import hashlib
 import hmac
+import logging
 import uuid
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
@@ -19,8 +21,22 @@ import httpx
 
 from app.core.config import get_settings
 
+logger = logging.getLogger(__name__)
+
 
 class RazorpayError(RuntimeError):
+    pass
+
+
+class RazorpayAuthenticationError(RazorpayError):
+    pass
+
+
+class RazorpayRateLimitError(RazorpayError):
+    pass
+
+
+class RazorpayServerError(RazorpayError):
     pass
 
 
@@ -37,10 +53,82 @@ class RazorpayClient:
         self._settings = get_settings()
         self.mock_mode = not self._settings.razorpay_configured
 
+    @staticmethod
+    def _mask(value: Any) -> Any:
+        """Redact credentials and payment-card data before logging."""
+        sensitive = {"authorization", "card", "card_number", "cvv", "number", "token", "secret"}
+        if isinstance(value, dict):
+            return {
+                key: "[REDACTED]" if key.lower() in sensitive else RazorpayClient._mask(item)
+                for key, item in value.items()
+            }
+        if isinstance(value, list):
+            return [RazorpayClient._mask(item) for item in value]
+        return value
+
+    async def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        json: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Make a Razorpay request, retrying transient failures 1s, 2s, 4s."""
+        url = f"{self._settings.razorpay_base_url.rstrip('/')}/{path.lstrip('/')}"
+        for attempt, delay in enumerate((0, 1, 2, 4)):
+            if delay:
+                await asyncio.sleep(delay)
+            logger.info(
+                "razorpay.request",
+                extra={"method": method, "url": url, "request": self._mask(json or {})},
+            )
+            try:
+                async with httpx.AsyncClient(timeout=15.0) as client:
+                    response = await client.request(
+                        method, url, headers=self._auth_header, json=json
+                    )
+            except httpx.HTTPError as exc:
+                if attempt < 3:
+                    continue
+                raise RazorpayServerError(f"Razorpay network error: {exc}") from exc
+
+            try:
+                body = response.json()
+            except ValueError:
+                body = {"detail": response.text[:500]}
+            logger.info(
+                "razorpay.response",
+                extra={
+                    "method": method,
+                    "url": url,
+                    "status_code": response.status_code,
+                    "response": self._mask(body),
+                },
+            )
+            if response.status_code in (401, 403):
+                raise RazorpayAuthenticationError("Razorpay authentication failed")
+            if response.status_code == 429:
+                if attempt < 3:
+                    continue
+                raise RazorpayRateLimitError("Razorpay rate limit exceeded")
+            if response.status_code >= 500:
+                if attempt < 3:
+                    continue
+                raise RazorpayServerError(f"Razorpay server error [{response.status_code}]")
+            if response.status_code >= 400:
+                raise RazorpayError(f"Razorpay request failed [{response.status_code}]")
+            return body
+        raise RazorpayServerError("Razorpay request failed after retries")
+
     # ------------------------------------------------------------------
     @property
     def _auth_header(self) -> Dict[str, str]:
-        credentials = f"{self._settings.razorpay_key_id}:{self._settings.razorpay_key_secret}"
+        key_id, key_secret = getattr(
+            self._settings,
+            "razorpay_key_pair",
+            (self._settings.razorpay_key_id, self._settings.razorpay_key_secret),
+        )
+        credentials = f"{key_id}:{key_secret}"
         encoded = base64.b64encode(credentials.encode()).decode()
         return {"Authorization": f"Basic {encoded}", "Content-Type": "application/json"}
 
@@ -61,12 +149,41 @@ class RazorpayClient:
         if self.mock_mode:
             return self._mock_payment(gateway_payment_id, amount_paise)
 
-        url = f"{self._settings.razorpay_base_url}/payments/{gateway_payment_id}"
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(url, headers=self._auth_header)
-        if response.status_code != 200:
-            raise RazorpayError(f"fetch_payment failed [{response.status_code}]: {response.text}")
-        return response.json()
+        return await self._request("GET", f"payments/{gateway_payment_id}")
+
+    async def refund_payment(
+        self,
+        gateway_payment_id: str,
+        amount_paise: Optional[int] = None,
+        notes: Optional[Dict[str, str]] = None,
+    ) -> Dict[str, Any]:
+        """Issue a full or partial refund after recovery fails."""
+        if self.mock_mode:
+            return {
+                "id": f"rfnd_mock_{uuid.uuid4().hex[:12]}",
+                "payment_id": gateway_payment_id,
+                "amount": amount_paise or 0,
+                "status": "processed",
+                "_mock": True,
+            }
+        payload: Dict[str, Any] = {}
+        if amount_paise is not None:
+            payload["amount"] = amount_paise
+        if notes:
+            payload["notes"] = notes
+        return await self._request("POST", f"payments/{gateway_payment_id}/refund", json=payload)
+
+    async def fetch_customer(self, customer_id: str) -> Dict[str, Any]:
+        """Fetch a Razorpay customer profile."""
+        if self.mock_mode:
+            return {"id": customer_id, "name": "Test Customer", "email": "test@example.com", "_mock": True}
+        return await self._request("GET", f"customers/{customer_id}")
+
+    async def update_customer(self, customer_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+        """Update allowed Razorpay customer contact fields."""
+        if self.mock_mode:
+            return {"id": customer_id, **self._mask(updates), "_mock": True}
+        return await self._request("PUT", f"customers/{customer_id}", json=updates)
 
     async def create_payment_link(
         self,
@@ -108,20 +225,11 @@ class RazorpayClient:
             "notify": {"sms": True, "email": True},
             "reminder_enable": True,
         }
-        url = f"{self._settings.razorpay_base_url}/payment_links"
         try:
-            async with httpx.AsyncClient(timeout=15.0) as client:
-                response = await client.post(url, headers=self._auth_header, json=payload)
-        except httpx.HTTPError as exc:
-            return GatewayResult(success=False, detail=f"network error: {exc}")
-        if response.status_code in (200, 201):
-            body = response.json()
+            body = await self._request("POST", "payment_links", json=payload)
             return GatewayResult(success=True, reference=body.get("id"), raw=body)
-        return GatewayResult(
-            success=False,
-            detail=f"payment link rejected [{response.status_code}]: {response.text[:300]}",
-            raw=response.json() if response.headers.get("content-type", "").startswith("application/json") else {},
-        )
+        except RazorpayError as exc:
+            return GatewayResult(success=False, detail=str(exc))
 
     async def retry_payment(
         self,

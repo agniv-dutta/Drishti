@@ -30,6 +30,39 @@ FEATURE_NAMES: List[str] = [
     "reason_unknown",
 ]
 
+STRATEGY_FEATURE_NAMES: List[str] = [
+    "decline_reason",
+    "customer_segment",
+    "failure_count",
+    "time_since_last_attempt",
+    "customer_communication_preference",
+]
+
+RECOVERY_STRATEGIES: List[str] = ["retry", "sms", "call", "offer", "escalate"]
+
+
+def build_strategy_features(
+    decline_reason: str,
+    customer_segment: str,
+    failure_count: int,
+    time_since_last_attempt: float,
+    customer_communication_preference: str,
+) -> Dict[str, Any]:
+    """Return the raw feature record used by the strategy classifier."""
+    if failure_count < 0:
+        raise ValueError("failure_count must be non-negative")
+    if time_since_last_attempt < 0:
+        raise ValueError("time_since_last_attempt must be non-negative")
+    return {
+        "decline_reason": str(decline_reason).lower(),
+        "customer_segment": str(customer_segment).lower(),
+        "failure_count": int(failure_count),
+        "time_since_last_attempt": float(time_since_last_attempt),
+        "customer_communication_preference": str(
+            customer_communication_preference
+        ).lower(),
+    }
+
 
 def _as_dict(txn_or_dict: Any) -> Dict[str, Any]:
     if isinstance(txn_or_dict, dict):

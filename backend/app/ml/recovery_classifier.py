@@ -1,18 +1,20 @@
 """Recovery channel/strategy classification.
 
-Rule-based decision matrix out of the box; upgrades to a trained sklearn
-classifier when ``CLASSIFIER_MODEL_PATH`` is set (predict_proba over
-RecoveryStrategy classes).
+Rule-based decision matrix out of the box; upgrades to trained classifiers
+when ``CLASSIFIER_MODEL_PATH`` is set.
 """
 
 from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.models.payment import PaymentTransaction, Retryability
 from app.models.recovery import RecoveryChannel, RecoveryStrategy
+
+STRATEGY_LABELS = ("retry", "sms", "call", "offer", "escalate")
+STRATEGY_CONFIDENCE_THRESHOLD = 0.70
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +118,53 @@ class RecoveryClassifier:
             logger.warning("recovery_classifier.ml_predict_failed", error=str(exc))
             return []
 
+    def predict_strategy(
+        self,
+        features: Dict[str, Any],
+        stop_after_days: int = 7,
+        threshold: float = STRATEGY_CONFIDENCE_THRESHOLD,
+    ) -> Dict[str, Any]:
+        """Predict a recovery strategy, falling back to escalation when unsure."""
+        if self._model is None:
+            return {
+                "recommended_strategy": "escalate",
+                "confidence": 0.0,
+                "alternate_strategies": ["retry", "sms"],
+                "stop_after_days": stop_after_days,
+            }
+        try:
+            from app.ml.strategy_model import strategy_feature_vector
+
+            probabilities = self._model.predict_proba(
+                [strategy_feature_vector(features)]
+            )[0]
+            classes = [str(value) for value in self._model.classes_]
+            classes = [
+                STRATEGY_LABELS[int(value)] if value.isdigit() and int(value) < len(STRATEGY_LABELS) else value
+                for value in classes
+            ]
+            ranked = sorted(
+                zip(classes, map(float, probabilities)),
+                key=lambda item: item[1],
+                reverse=True,
+            )
+            top_strategy, confidence = ranked[0]
+            recommended = top_strategy if confidence >= threshold else "escalate"
+            alternates = [name for name, _ in ranked if name != recommended][:2]
+            return {
+                "recommended_strategy": recommended,
+                "confidence": round(confidence, 4),
+                "alternate_strategies": alternates,
+                "stop_after_days": stop_after_days,
+            }
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("recovery_classifier.strategy_predict_failed", error=str(exc))
+            return {
+                "recommended_strategy": "escalate",
+                "confidence": 0.0,
+                "alternate_strategies": ["retry", "sms"],
+                "stop_after_days": stop_after_days,
+            }
 
 _default_classifier: Optional[RecoveryClassifier] = None
 

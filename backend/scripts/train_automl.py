@@ -154,45 +154,34 @@ def main() -> None:
     joblib.dump(model, risk_path)
     print(f"Saved risk model -> {risk_path}")
 
-    # Strategy classifier: distill the decision table into an ML artifact so the
-    # runtime can load it via CLASSIFIER_MODEL_PATH.
-    from app.ml.recovery_classifier import RecoveryClassifier
-    from app.models.payment import Retryability
-
-    clf = RecoveryClassifier()
-    retryability_by_reason = {
-        "insufficient_funds": Retryability.DELAYED_RETRY,
-        "authentication_timeout": Retryability.IMMEDIATE_RETRY,
-        "bank_decline": Retryability.DELAYED_RETRY,
-        "invalid_card_details": Retryability.CUSTOMER_ACTION_REQUIRED,
-        "card_expired": Retryability.CUSTOMER_ACTION_REQUIRED,
-        "network_error": Retryability.IMMEDIATE_RETRY,
-        "risk_blocked": Retryability.NOT_RETRYABLE,
-        "customer_dropoff": Retryability.DELAYED_RETRY,
-        "unknown": Retryability.CUSTOMER_ACTION_REQUIRED,
-    }
-    reason_features = {name: i for i, name in enumerate(feature_names) if name.startswith("reason_")}
-    amount_log_idx = feature_names.index("amount_log")
+    # Strategy classifier uses the five-class feature contract and balanced weights.
+    from app.ml.data_preprocessor import build_strategy_features
+    from app.ml.strategy_model import train_strategy_model
 
     strategy_rows, strategy_labels = [], []
-    for row in X.tolist():
-        reason = next(
-            (name.removeprefix("reason_") for name, idx in reason_features.items() if row[idx] == 1.0),
-            "unknown",
+    reasons = ["insufficient_funds", "authentication_timeout", "bank_decline", "invalid_card_details", "card_expired", "network_error", "risk_blocked", "customer_dropoff", "unknown"]
+    segments = ["new", "retained", "high-value"]
+    preferences = ["sms", "call", "email", "none"]
+    for index in range(max(n_samples, 100)):
+        reason = reasons[index % len(reasons)]
+        segment = segments[index % len(segments)]
+        preference = preferences[index % len(preferences)]
+        failure_count = index % 5
+        days_since_attempt = float(index % 15)
+        row = build_strategy_features(
+            reason, segment, failure_count, days_since_attempt, preference
         )
-        retryability = retryability_by_reason.get(reason, Retryability.CUSTOMER_ACTION_REQUIRED)
-        amount_inr = float(np.expm1(row[amount_log_idx]))
-        strategy = clf.choose_strategy(
-            retryability, risk_score=0.5, amount_inr=amount_inr, high_value_threshold_inr=25000
+        label = (
+            "escalate" if failure_count >= 4 or reason == "risk_blocked"
+            else "offer" if segment == "high-value"
+            else "call" if preference == "call"
+            else "sms" if preference == "sms"
+            else "retry"
         )
         strategy_rows.append(row)
-        strategy_labels.append(strategy.value)
+        strategy_labels.append(label)
 
-    from sklearn.ensemble import RandomForestClassifier
-
-    strategy_model = RandomForestClassifier(n_estimators=120, random_state=args.seed)
-    strategy_model.fit(np.array(strategy_rows), np.array(strategy_labels))
-    strategy_model.classes_ = np.unique(strategy_model.classes_)  # ensure ndarray
+    strategy_model = train_strategy_model(strategy_rows, strategy_labels, args.seed)
     strategy_path = Path(args.model_dir) / "recovery_classifier.joblib"
     joblib.dump(strategy_model, strategy_path)
     print(f"Saved strategy classifier -> {strategy_path}")

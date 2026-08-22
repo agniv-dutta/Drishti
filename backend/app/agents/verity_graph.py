@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import asyncio
-import json
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Awaitable, Callable, Dict, List, Literal, Optional, TypedDict
 
 from fastapi import WebSocket
@@ -14,7 +13,6 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, interrupt
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.agents.analyzer_agent import AnalyzerAgent
@@ -432,6 +430,8 @@ class VerityAuditSupervisor(BaseAgent):
     ) -> AuditDecision:
         settings = get_settings()
         violations: List[str] = []
+        if merchant_id in settings.blacklisted_merchant_id_set:
+            violations.append("merchant is blacklisted")
         if contact_attempts >= 3:
             violations.append("max contact attempts reached")
         if daily_spend_usd >= settings.merchant_daily_spend_limit_usd:
@@ -491,7 +491,7 @@ class VerityAuditSupervisor(BaseAgent):
             except Exception as exc:  # noqa: BLE001
                 logger.warning("verity.audit.persist_failed", error=str(exc))
         self.audit(
-            event_type=self._audit_event_type(),
+            event_type=self._audit_event_type(decision.approved),
             resource_type="merchant",
             resource_id=merchant_id,
             outcome="approved" if decision.approved else "rejected",
@@ -504,10 +504,10 @@ class VerityAuditSupervisor(BaseAgent):
         )
 
     @staticmethod
-    def _audit_event_type():
+    def _audit_event_type(approved: bool):
         from app.models.audit import AuditEventType
 
-        return AuditEventType.RECOVERY_EXECUTED
+        return AuditEventType.RECOVERY_SUCCEEDED if approved else AuditEventType.RECOVERY_FAILED
 
 
 class VerityGraphRunner:
@@ -726,7 +726,7 @@ class VerityGraphRunner:
                 path = path.replace("sqlite:///", "", 1)
             sqlite_path = path
             if sqlite_path not in {":memory:", ""}:
-                sqlite3.connect(sqlite_path).close()
+                Path(sqlite_path).parent.mkdir(parents=True, exist_ok=True)
             conn = sqlite3.connect(sqlite_path, check_same_thread=False)
             return SqliteSaver(conn)
         except Exception:
@@ -752,9 +752,10 @@ class VerityGraphRunner:
         contact_attempts: int = 0,
         daily_spend_usd: float = 0.0,
     ) -> Dict[str, Any]:
+        run_thread_id = thread_id or uuid.uuid4().hex
         config = {
             "configurable": {
-                "thread_id": thread_id or uuid.uuid4().hex,
+                "thread_id": run_thread_id,
             }
         }
         payload: Any = resume if resume is not None else {
@@ -768,7 +769,9 @@ class VerityGraphRunner:
             "daily_spend_usd": daily_spend_usd,
         }
         result = await self._graph.ainvoke(payload, config=config)
-        return self._normalize_result(result)
+        normalized = self._normalize_result(result)
+        normalized["thread_id"] = run_thread_id
+        return normalized
 
     @staticmethod
     def _normalize_result(result: Any) -> Dict[str, Any]:
@@ -787,4 +790,3 @@ def _normalize_websocket_auth(websocket: WebSocket) -> bool:
     settings = get_settings()
     api_key = websocket.headers.get(settings.api_key_header.lower()) or websocket.headers.get("x-api-key")
     return bool(api_key and api_key in settings.valid_api_keys)
-

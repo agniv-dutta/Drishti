@@ -59,8 +59,13 @@ class Settings(BaseSettings):
     # ---- Razorpay ----
     razorpay_key_id: Optional[str] = None
     razorpay_key_secret: Optional[str] = None
+    razorpay_test_key_id: Optional[str] = None
+    razorpay_test_key_secret: Optional[str] = None
+    razorpay_live_key_id: Optional[str] = None
+    razorpay_live_key_secret: Optional[str] = None
     razorpay_webhook_secret: Optional[str] = None
     razorpay_base_url: str = "https://api.razorpay.com/v1"
+    razorpay_environment: str = "test"  # test keys by default; set production explicitly
 
     # ---- Groq reasoning model ----
     groq_api_key: Optional[str] = None
@@ -105,6 +110,7 @@ class Settings(BaseSettings):
     max_recovery_attempts: int = 4
     human_review_confidence_threshold: float = 0.7
     merchant_daily_spend_limit_usd: float = 5000.0
+    blacklisted_merchant_ids: str = ""
     invalid_phone_numbers: str = ""
     verity_checkpoint_path: str = "logs/verity_checkpoints.db"
 
@@ -140,8 +146,29 @@ class Settings(BaseSettings):
         }
 
     @property
+    def blacklisted_merchant_id_set(self) -> set[str]:
+        return {
+            merchant.strip()
+            for merchant in self.blacklisted_merchant_ids.split(",")
+            if merchant.strip()
+        }
+
+    @property
     def razorpay_configured(self) -> bool:
-        return bool(self.razorpay_key_id and self.razorpay_key_secret)
+        return bool(self.razorpay_key_pair[0] and self.razorpay_key_pair[1])
+
+    @property
+    def razorpay_key_pair(self) -> tuple[Optional[str], Optional[str]]:
+        """Select test or live credentials based on RAZORPAY_ENVIRONMENT."""
+        if self.razorpay_environment.lower() in {"production", "live", "prod"}:
+            return (
+                self.razorpay_live_key_id or self.razorpay_key_id,
+                self.razorpay_live_key_secret or self.razorpay_key_secret,
+            )
+        return (
+            self.razorpay_test_key_id or self.razorpay_key_id,
+            self.razorpay_test_key_secret or self.razorpay_key_secret,
+        )
 
 
 @lru_cache(maxsize=1)
