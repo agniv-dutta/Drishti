@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from app.agents.analyzer_agent import AnalyzerAgent
 from app.agents.base_agent import BaseAgent
 from app.agents.executor_agent import ExecutorAgent
+from app.agents.prompts import AUDIT_SUPERVISOR_SYSTEM_PROMPT
 from app.agents.strategist_agent import StrategistAgent
 from app.cache.redis_client import get_cache
 from app.core.config import get_settings
@@ -67,6 +68,7 @@ class RecoveryNotFoundError(SupervisorError):
 class SupervisorAgent(BaseAgent):
     name = "supervisor"
     description = "End-to-end recovery orchestration with full audit coverage"
+    system_prompt = AUDIT_SUPERVISOR_SYSTEM_PROMPT
 
     def __init__(self) -> None:
         super().__init__()

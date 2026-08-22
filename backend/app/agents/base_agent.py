@@ -78,32 +78,36 @@ class BaseAgent(ABC):
         return entry
 
     # ------------------------------------------------------------------
-    # Optional LLM reasoning (Anthropic Claude)
+    # Optional LLM reasoning (Groq/OpenAI-compatible endpoint)
     # ------------------------------------------------------------------
     @property
     def llm_enabled(self) -> bool:
         return get_settings().llm_enabled
 
     def llm_complete(self, system: str, prompt: str) -> Optional[str]:
-        """Call Claude; returns None on any failure so callers can fall back."""
+        """Call Groq; returns None on any failure so callers can fall back."""
         settings = get_settings()
         if not settings.llm_enabled:
             return None
         started = time.perf_counter()
         try:
-            import anthropic  # lazy import keeps startup fast without the dep
+            from openai import OpenAI  # lazy import keeps startup fast without the dep
 
-            client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-            response = client.messages.create(
-                model=settings.claude_model,
-                max_tokens=settings.llm_max_tokens,
-                system=system,
-                messages=[{"role": "user", "content": prompt}],
+            client = OpenAI(
+                api_key=settings.groq_api_key,
+                base_url="https://api.groq.com/openai/v1",
             )
-            text = "".join(block.text for block in response.content if block.type == "text")
+            response = client.responses.create(
+                model=settings.groq_model,
+                max_output_tokens=settings.llm_max_tokens,
+                instructions=system,
+                input=prompt,
+                temperature=settings.llm_temperature,
+            )
+            text = getattr(response, "output_text", None) or ""
             self.log.info(
                 "llm.complete",
-                model=settings.claude_model,
+                model=settings.groq_model,
                 latency_ms=round((time.perf_counter() - started) * 1000, 1),
                 input_tokens=getattr(response.usage, "input_tokens", None),
                 output_tokens=getattr(response.usage, "output_tokens", None),

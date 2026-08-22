@@ -45,8 +45,10 @@ def build_features(txn_or_dict: Any) -> Dict[str, float]:
     amount_inr = amount_paise / 100.0 if amount_paise else float(raw.get("amount", 0) or 0)
 
     created_at: datetime = raw.get("created_at") or datetime.utcnow()
-    method = str(raw.get("method") or "").lower()
-    reason = str(raw.get("failure_reason") or "unknown").lower()
+    method = str(getattr(raw.get("method"), "value", raw.get("method")) or "").lower()
+    # Tolerate enums ("FailureReason.X" -> "x"), plain strings, and None.
+    reason_value = getattr(raw.get("failure_reason"), "value", raw.get("failure_reason"))
+    reason = str(reason_value or "unknown").lower().split(".")[-1]
 
     features: Dict[str, float] = {
         "amount_log": math.log1p(max(amount_inr, 0.0)),

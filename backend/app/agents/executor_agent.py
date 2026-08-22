@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from typing import Callable, Dict, Optional, Tuple
 
 from app.agents.base_agent import BaseAgent
+from app.agents.prompts import EXECUTION_ORCHESTRATOR_SYSTEM_PROMPT
 from app.integrations.crm_client import build_recovery_task, get_crm_provider
 from app.integrations.email_provider import build_recovery_email, get_email_provider
 from app.integrations.razorpay_client import get_razorpay_client
@@ -33,6 +34,7 @@ from app.utils.formatters import format_inr
 class ExecutorAgent(BaseAgent):
     name = "executor"
     description = "Dispatches recovery steps to gateway/messaging/voice/CRM providers"
+    system_prompt = EXECUTION_ORCHESTRATOR_SYSTEM_PROMPT
 
     async def run(
         self,

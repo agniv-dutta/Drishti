@@ -14,6 +14,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     BigInteger,
+    Index,
     String,
     Text,
 )
@@ -253,3 +254,109 @@ class AuditRecord(Base):
             details=entry.details,
             is_exception=entry.is_exception or severity == AuditSeverity.CRITICAL.value,
         )
+
+
+# ---------------------------------------------------------------------------
+# Verity revenue recovery schema
+# ---------------------------------------------------------------------------
+
+
+class Merchant(Base):
+    __tablename__ = "merchants"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    api_key_hash: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utcnow
+    )
+
+
+class PaymentTransactionRecord(Base):
+    __tablename__ = "payment_transactions"
+    __table_args__ = (
+        Index("ix_payment_transactions_merchant_id", "merchant_id"),
+        Index("ix_payment_transactions_status", "status"),
+        Index("ix_payment_transactions_created_at", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    merchant_id: Mapped[str] = mapped_column(
+        ForeignKey("merchants.id"), nullable=False
+    )
+    transaction_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    amount: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False, default="INR")
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="created")
+    reason_code: Mapped[Optional[str]] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utcnow
+    )
+
+
+class RecoveryAttempt(Base):
+    __tablename__ = "recovery_attempts"
+    __table_args__ = (
+        Index("ix_recovery_attempts_payment_id", "payment_id"),
+        Index("ix_recovery_attempts_status", "status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    payment_id: Mapped[str] = mapped_column(
+        ForeignKey("payment_transactions.id"), nullable=False
+    )
+    strategy_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
+    intervention_channel: Mapped[str] = mapped_column(String(64), nullable=False)
+    result: Mapped[Optional[str]] = mapped_column(Text)
+    money_recovered: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utcnow
+    )
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+    __table_args__ = (
+        Index("ix_audit_logs_merchant_id", "merchant_id"),
+        Index("ix_audit_logs_timestamp", "timestamp"),
+    )
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    merchant_id: Mapped[str] = mapped_column(
+        ForeignKey("merchants.id"), nullable=False
+    )
+    action_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    input_data: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    output_data: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    model_confidence: Mapped[Optional[float]] = mapped_column(Float)
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utcnow
+    )
+    user_id: Mapped[Optional[str]] = mapped_column(String(64))
+
+
+class MLModelVersion(Base):
+    __tablename__ = "ml_model_versions"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    model_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    version: Mapped[str] = mapped_column(String(64), nullable=False)
+    accuracy: Mapped[Optional[float]] = mapped_column(Float)
+    f1_score: Mapped[Optional[float]] = mapped_column(Float)
+    training_date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utcnow
+    )
+
+
+class RecoveryWorkflow(Base):
+    __tablename__ = "recovery_workflows"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    template_name: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)
+    steps_json: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    success_rate: Mapped[Optional[float]] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utcnow
+    )

@@ -62,10 +62,11 @@ class Settings(BaseSettings):
     razorpay_webhook_secret: Optional[str] = None
     razorpay_base_url: str = "https://api.razorpay.com/v1"
 
-    # ---- Anthropic Claude ----
-    anthropic_api_key: Optional[str] = None
-    claude_model: str = "claude-sonnet-4-20250514"
+    # ---- Groq reasoning model ----
+    groq_api_key: Optional[str] = None
+    groq_model: str = "openai/gpt-oss-120b"
     llm_max_tokens: int = 1024
+    llm_temperature: float = 0.0
 
     # ---- SMS provider: twilio | sns | mock ----
     sms_provider: str = "mock"
@@ -102,6 +103,10 @@ class Settings(BaseSettings):
     high_value_threshold_inr: float = 25000.0
     nudge_window_hours: int = 72
     max_recovery_attempts: int = 4
+    human_review_confidence_threshold: float = 0.7
+    merchant_daily_spend_limit_usd: float = 5000.0
+    invalid_phone_numbers: str = ""
+    verity_checkpoint_path: str = "logs/verity_checkpoints.db"
 
     # ------------------------------------------------------------------
     @field_validator("log_level")
@@ -123,8 +128,16 @@ class Settings(BaseSettings):
 
     @property
     def llm_enabled(self) -> bool:
-        """True when Claude reasoning is available; rule engine used otherwise."""
-        return bool(self.anthropic_api_key)
+        """True when Groq reasoning is available; rule engine used otherwise."""
+        return bool(self.groq_api_key)
+
+    @property
+    def invalid_phone_number_set(self) -> set[str]:
+        return {
+            phone.strip()
+            for phone in self.invalid_phone_numbers.split(",")
+            if phone.strip()
+        }
 
     @property
     def razorpay_configured(self) -> bool:

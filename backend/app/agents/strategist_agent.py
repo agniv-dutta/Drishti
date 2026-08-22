@@ -8,6 +8,7 @@ import uuid
 from typing import Dict, List, Optional, Tuple
 
 from app.agents.base_agent import BaseAgent
+from app.agents.prompts import STRATEGY_SELECTOR_SYSTEM_PROMPT
 from app.core.config import get_settings
 from app.ml.data_preprocessor import build_features
 from app.ml.recovery_classifier import get_recovery_classifier
@@ -34,6 +35,7 @@ def _union_probability(probabilities: List[float]) -> float:
 class StrategistAgent(BaseAgent):
     name = "strategist"
     description = "Selects the recovery strategy and sequences outreach channels"
+    system_prompt = STRATEGY_SELECTOR_SYSTEM_PROMPT
 
     async def run(
         self,

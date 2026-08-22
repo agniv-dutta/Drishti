@@ -11,6 +11,7 @@ import time
 from typing import Dict, List, Optional
 
 from app.agents.base_agent import BaseAgent
+from app.agents.prompts import PAYMENT_ANALYZER_SYSTEM_PROMPT
 from app.core.config import get_settings
 from app.core.logging_config import get_logger
 from app.ml.data_preprocessor import build_features
@@ -74,23 +75,18 @@ WAIT_MINUTES_BY_REASON: Dict[FailureReason, int] = {
     FailureReason.UNKNOWN: 180,
 }
 
-_LLM_SYSTEM = (
-    "You are a payments-failure analyst for an Indian payment gateway. "
-    "Classify the failure into exactly one of these values: "
-    + ", ".join(reason.value for reason in FailureReason)
-    + ". Respond with ONLY a JSON object: "
-    '{"root_cause": "<value>", "summary": "<one sentence>", "confidence": <0-1>}'
-)
-
-
 class AnalyzerAgent(BaseAgent):
     name = "analyzer"
     description = "Root-causes failed payments and scores recovery likelihood"
+    system_prompt = PAYMENT_ANALYZER_SYSTEM_PROMPT
 
     async def run(self, txn: PaymentTransaction) -> FailureAnalysis:
         started = time.perf_counter()
 
         reason, mapping_confidence = self._resolve_reason(txn)
+        # Propagate the derived cause so downstream feature building
+        # (risk scoring) sees the classified reason, not the raw input.
+        txn.failure_reason = reason
         retryability = RETRYABILITY_BY_REASON[reason]
         wait_minutes = WAIT_MINUTES_BY_REASON[reason]
 
@@ -184,7 +180,7 @@ class AnalyzerAgent(BaseAgent):
             f"amount_inr: {txn.amount_inr:.2f}\n"
             f"attempt_number: {txn.attempt_number}"
         )
-        parsed = self.extract_json(self.llm_complete(_LLM_SYSTEM, prompt))
+        parsed = self.extract_json(self.llm_complete(self.system_prompt, prompt))
         if not parsed:
             return None
         try:
