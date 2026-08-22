@@ -1,18 +1,15 @@
-version: "3.9"
-
 # Drishti local development environment.
 #   docker compose up -d          -> Postgres + Redis + API on :8000
 #   docker compose logs -f api    -> tail API logs
 services:
   postgres:
-    image: postgres:16-alpine
+    networks: [internal]
+    image: postgres:15-alpine
     container_name: drishti-postgres
     environment:
       POSTGRES_USER: drishti
       POSTGRES_PASSWORD: drishti
       POSTGRES_DB: drishti
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -22,11 +19,10 @@ services:
       retries: 10
 
   redis:
+    networks: [internal]
     image: redis:7-alpine
     container_name: drishti-redis
     command: ["redis-server", "--appendonly", "yes"]
-    ports:
-      - "6379:6379"
     volumes:
       - redisdata:/data
     healthcheck:
@@ -36,12 +32,13 @@ services:
       retries: 10
 
   api:
+    networks: [internal]
     build:
       context: .
       dockerfile: Dockerfile
     container_name: drishti-api
     env_file:
-      - docker/.env.dev
+      - .env.dev
     environment:
       DATABASE_URL: postgresql+psycopg2://drishti:drishti@postgres:5432/drishti
       REDIS_URL: redis://redis:6379/0
@@ -58,6 +55,10 @@ services:
       - ./logs:/app/logs
       - ./models:/app/models
     restart: unless-stopped
+
+networks:
+  internal:
+    internal: true
 
 volumes:
   pgdata:

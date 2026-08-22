@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
 from app.cache.redis_client import get_cache
@@ -14,6 +14,7 @@ from app.database.models import RecoveryRecord
 from app.database.session import get_db
 from app.models.payment import utcnow
 from app.models.recovery import RecoveryStatus
+from app.metrics.collector import MetricsCollector
 from app.schemas.metrics_schemas import (
     ChannelStat,
     CostAnalysisResponse,
@@ -23,6 +24,28 @@ from app.schemas.metrics_schemas import (
 from app.utils.formatters import paise_to_rupees
 
 router = APIRouter(prefix="/metrics", tags=["metrics"], dependencies=[Depends(require_api_key)])
+collector = MetricsCollector()
+
+
+@router.get("/summary")
+async def metrics_summary(
+    period_days: int = Query(default=30, ge=1, le=365),
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """Return recovery, cost, false-positive, and drift metrics as JSON."""
+    return collector.collect(db, period_days)
+
+
+@router.get("/prometheus", include_in_schema=False)
+async def prometheus_metrics(
+    period_days: int = Query(default=30, ge=1, le=365),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Prometheus scrape endpoint."""
+    collector.collect(db, period_days)
+    from prometheus_client import CONTENT_TYPE_LATEST
+
+    return Response(content=collector.prometheus_payload(), media_type=CONTENT_TYPE_LATEST)
 
 
 def _window_records(db: Session, period_days: int) -> List[RecoveryRecord]:

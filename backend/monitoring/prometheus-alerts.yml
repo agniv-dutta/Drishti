@@ -1,0 +1,33 @@
+groups:
+  - name: drishti-recovery
+    rules:
+      - alert: DrishtiRecoveryRateLow
+        expr: drishti_recovery_rate < 0.35
+        for: 15m
+        labels:
+          severity: warning
+          team: engineering
+        annotations:
+          summary: Recovery rate is below 35%
+          description: Notify the engineering team and inspect strategy/channel performance.
+
+      - alert: DrishtiCostPerRecoveryHigh
+        expr: drishti_cost_per_recovery_inr > 100
+        for: 15m
+        labels:
+          severity: warning
+          team: recovery-operations
+        annotations:
+          summary: Cost per recovery exceeded INR 100
+          description: Escalate for channel cost review.
+
+      - alert: DrishtiModelDriftHigh
+        expr: drishti_model_drift_score > 0.15
+        for: 30m
+        labels:
+          severity: critical
+          team: ml-platform
+          action: retrain-automl
+        annotations:
+          summary: Model drift exceeded 0.15 MAE
+          description: Trigger the AutoML retraining workflow and validate the replacement model.

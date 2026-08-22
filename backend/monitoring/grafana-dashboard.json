@@ -1,0 +1,48 @@
+{
+  "title": "Drishti Recovery Operations",
+  "uid": "drishti-recovery",
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "time": {"from": "now-30d", "to": "now"},
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Recovery Rate Trend",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "targets": [{"expr": "drishti_recovery_rate", "legendFormat": "Recovery rate"}],
+      "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1}}
+    },
+    {
+      "id": 2,
+      "type": "bargauge",
+      "title": "Strategy Effectiveness",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "targets": [{"expr": "drishti_strategy_recoveries", "legendFormat": "{{strategy}}"}],
+      "fieldConfig": {"defaults": {"unit": "short"}}
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Cost by Channel",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [{"expr": "drishti_channel_cost_inr", "legendFormat": "{{channel}}"}],
+      "fieldConfig": {"defaults": {"unit": "currencyINR"}}
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Model Performance Drift",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [{"expr": "drishti_model_drift_score", "legendFormat": "MAE"}],
+      "fieldConfig": {"defaults": {"unit": "short", "thresholds": {"steps": [{"color": "green", "value": null}, {"color": "red", "value": 0.15}]}}}
+    },
+    {
+      "id": 5,
+      "type": "logs",
+      "title": "Exception Logs",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 16},
+      "targets": [{"expr": "{app=\"drishti\"} |= \"exception\""}]
+    }
+  ]
+}

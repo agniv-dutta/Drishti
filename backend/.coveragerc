@@ -1,0 +1,6 @@
+[run]
+omit =
+    app/agents/verity_graph.py
+
+[report]
+fail_under = 80
