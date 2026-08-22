@@ -1,0 +1,64 @@
+version: "3.9"
+
+# Drishti local development environment.
+#   docker compose up -d          -> Postgres + Redis + API on :8000
+#   docker compose logs -f api    -> tail API logs
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: drishti-postgres
+    environment:
+      POSTGRES_USER: drishti
+      POSTGRES_PASSWORD: drishti
+      POSTGRES_DB: drishti
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U drishti -d drishti"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: drishti-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: drishti-api
+    env_file:
+      - docker/.env.dev
+    environment:
+      DATABASE_URL: postgresql+psycopg2://drishti:drishti@postgres:5432/drishti
+      REDIS_URL: redis://redis:6379/0
+      AUDIT_LOG_FILE: /app/logs/audit.jsonl
+      MODEL_DIR: /app/models
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+      - ./models:/app/models
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:

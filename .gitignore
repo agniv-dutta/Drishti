@@ -1,0 +1,80 @@
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/*.pyd
+**/*.pyo
+.python-version
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Tool caches and test artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.nox/
+
+# Build / packaging outputs
+build/
+dist/
+site/
+*.egg-info/
+pip-wheel-metadata/
+
+# Logs and runtime artifacts
+logs/
+log/
+*.log
+*.log.*
+*.jsonl
+*.out
+*.err
+*.pid
+*.pid.lock
+*.seed
+*.stackdump
+audit.jsonl
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.*
+!.env.example
+*.local
+
+# Local data and generated assets
+models/
+backend/logs/
+backend/models/
+backend/tmp/
+backend/temp/
+backend/cache/
+backend/output/
+backend/data/
+
+# Database and Docker runtime files
+*.sqlite3
+*.db
+postgres-data/
+redis-data/
+docker/.env*
+
+# OS files
+Thumbs.db
+.DS_Store

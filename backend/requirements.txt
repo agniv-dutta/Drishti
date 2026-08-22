@@ -1,0 +1,63 @@
+# ============================================================
+# Drishti - AI Revenue Recovery agent system
+# Target: Python 3.11+
+# ============================================================
+
+# ---- Web framework ----
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+starlette==0.41.3
+
+# ---- Data validation & settings ----
+pydantic==2.10.4
+pydantic-settings==2.7.0
+email-validator==2.2.0
+
+# ---- Environment & security ----
+python-dotenv==1.0.1
+python-jose[cryptography]==3.3.0
+cryptography==44.0.0
+
+# ---- Database (PostgreSQL + migrations) ----
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+alembic==1.14.0
+
+# ---- Async HTTP client ----
+httpx==0.28.1
+
+# ---- Caching ----
+redis==5.2.1
+hiredis==3.0.0
+
+# ---- LLM & agentic orchestration ----
+anthropic==0.42.0
+langchain==0.3.14
+langchain-core==0.3.29
+langgraph==0.2.60
+
+# ---- Structured logging ----
+structlog==24.4.0
+
+# ---- ML / data science (runtime scoring) ----
+numpy==1.26.4
+pandas==2.2.3
+scikit-learn==1.6.0
+joblib==1.4.2
+
+# ---- Testing ----
+pytest==8.3.4
+pytest-asyncio==0.25.0
+pytest-cov==6.0.0
+
+# ---- Notebooks / experimentation ----
+jupyter==1.1.1
+matplotlib==3.10.0
+
+# ============================================================
+# AutoML engines - heavy installs; uncomment the one you train with.
+#   scripts/train_automl.py auto-detects whichever is importable.
+# ============================================================
+# h2o==3.46.0.7          # H2O AutoML (Java 8+ required)
+# autogluon==1.2         # AWS AutoGluon (large dependency tree)
+# tpot==0.12.2           # TPOT genetic-programming AutoML
