@@ -3,6 +3,7 @@ import LandingPage from './components/LandingPage';
 import DashboardOverview, { type DashboardSection } from './components/DashboardOverview';
 import DashboardPage from './components/DashboardPage';
 import FeaturePage, { type FeaturePageSlug } from './components/FeaturePage';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
 
 type Route =
   | { name: 'landing' }
@@ -14,6 +15,7 @@ const isDashboardSection = (value: string | undefined): value is DashboardSectio
   value === 'overview' ||
   value === 'payments' ||
   value === 'recoveries' ||
+  value === 'analytics' ||
   value === 'audit-trail' ||
   value === 'settings';
 
@@ -57,6 +59,7 @@ function App() {
   const renderRoute = useCallback(() => {
     switch (route.name) {
       case 'dashboard':
+        if (route.section === 'analytics') return <AnalyticsDashboard />;
         return <DashboardOverview section={route.section} />;
       case 'feature':
         return <FeaturePage slug={route.slug} />;

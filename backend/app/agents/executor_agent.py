@@ -14,10 +14,10 @@ from typing import Callable, Dict, Optional, Tuple
 from app.agents.base_agent import BaseAgent
 from app.agents.prompts import EXECUTION_ORCHESTRATOR_SYSTEM_PROMPT
 from app.integrations.crm_client import build_recovery_task, get_crm_provider
-from app.integrations.email_provider import build_recovery_email, get_email_provider
+from app.integrations.email_provider import get_email_provider
 from app.integrations.razorpay_client import get_razorpay_client
-from app.integrations.sms_provider import build_recovery_sms, get_sms_provider
-from app.integrations.voice_provider import build_hinglish_script, get_voice_provider
+from app.integrations.sms_provider import get_sms_provider
+from app.integrations.voice_provider import get_voice_provider
 from app.ml.chargeback_risk import predict_chargeback_risk
 from app.models.audit import AuditEventType, AuditSeverity
 from app.models.payment import PaymentTransaction
@@ -217,10 +217,10 @@ class ExecutorAgent(BaseAgent):
 
         language = detect_language(txn.meta)
         script = render_voice_script(language, txn.customer.name, format_inr(txn.amount_inr))
-        result = await get_voice_provider().place_call(txn.customer.phone, script.as_text())
+        result = await get_voice_provider().place_call(txn.customer.phone, script)
         if not result.success:
             raise RuntimeError(result.detail or "ivr call failed")
-        return f"ivr call placed ({script.language.value} script)", result.reference, 0
+        return f"ivr call placed ({script.language} script)", result.reference, 0
 
     async def _do_crm(
         self, txn: PaymentTransaction, step: RecoveryStep

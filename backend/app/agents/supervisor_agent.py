@@ -22,7 +22,13 @@ from app.agents.strategist_agent import StrategistAgent
 from app.cache.redis_client import get_cache
 from app.core.config import get_settings
 from app.core.logging_config import get_logger
-from app.database.models import PaymentRecord, RecoveryRecord, new_id
+from app.database.models import (
+    ConsentRequestRecord,
+    PaymentRecord,
+    RecoveryRecord,
+    new_id,
+)
+from app.integrations.sms_provider import get_sms_provider
 from app.ml.data_preprocessor import FEATURE_NAMES, build_features
 from app.ml.drift_detector import DriftDetector
 from app.ml.recovery_classifier import get_recovery_classifier
@@ -35,6 +41,8 @@ from app.models.payment import (
     utcnow,
 )
 from app.models.recovery import ExecutionResult, FailureAnalysis, RecoveryPlan, RecoveryStatus, RecoveryStrategy
+from app.routing import triage_service
+from app.routing.confidence_router import RoutingAction, get_confidence_router
 from app.schemas.payment_schemas import PaymentIngestRequest
 from app.schemas.recovery_schemas import DetectRequest, DetectResponse, DetectedCandidate
 from app.utils.encryption import encrypt_dict
@@ -77,6 +85,97 @@ class SupervisorAgent(BaseAgent):
         self.strategist = StrategistAgent()
         self.executor = ExecutorAgent()
         self.consensus = ConsensusAgent()
+        self.router = get_confidence_router()
+
+    # ------------------------------------------------------------------
+    # confidence-based routing (automation vs human judgment)
+    # ------------------------------------------------------------------
+    async def _apply_routing(
+        self,
+        db: Session,
+        payment: PaymentRecord,
+        txn: PaymentTransaction,
+        plan: RecoveryPlan,
+        recovery_record: RecoveryRecord,
+    ) -> None:
+        """Decide auto-execute / monitor / ask-customer / human escalation."""
+        decision = self.router.route(txn, plan)
+        routing = decision.to_dict()
+
+        analysis = dict(recovery_record.analysis_json or {})
+        analysis["routing"] = routing
+        recovery_record.analysis_json = analysis
+        db.add(recovery_record)
+        db.flush()
+
+        severity = (
+            AuditSeverity.WARNING
+            if decision.action is RoutingAction.HUMAN_ESCALATION
+            else AuditSeverity.INFO
+        )
+        self.audit(
+            AuditEventType.CONFIDENCE_ROUTED,
+            resource_type="recovery",
+            resource_id=recovery_record.id,
+            outcome=decision.action.value,
+            severity=severity,
+            message=f"confidence={decision.confidence:.2f} priority={decision.priority_score:.1f}",
+            details={"payment_id": recovery_record.payment_id, **routing},
+        )
+
+        if decision.action is RoutingAction.HUMAN_ESCALATION:
+            triage_service.create_triage_ticket(db, payment, plan, decision)
+        elif decision.action is RoutingAction.ASK_CUSTOMER:
+            await self._request_customer_consent(db, payment, txn)
+
+    async def _request_customer_consent(
+        self, db: Session, payment: PaymentRecord, txn: PaymentTransaction
+    ) -> ConsentRequestRecord:
+        existing = (
+            db.query(ConsentRequestRecord)
+            .filter(
+                ConsentRequestRecord.payment_id == payment.id,
+                ConsentRequestRecord.status == "awaiting",
+            )
+            .first()
+        )
+        if existing is not None:
+            return existing
+
+        from app.routing.confidence_router import CONSENT_QUESTION
+
+        consent = ConsentRequestRecord(
+            id=new_id(),
+            payment_id=payment.id,
+            question=CONSENT_QUESTION,
+            channel="sms",
+            status="awaiting",
+        )
+        db.add(consent)
+        db.flush()
+
+        try:
+            result = await get_sms_provider().send(txn.customer.phone, CONSENT_QUESTION)
+            detail = "sms delivered" if result.success else f"sms failed ({result.detail})"
+        except Exception as exc:  # noqa: BLE001 - outreach must never break planning
+            detail = f"sms error ({exc})"
+        self.audit(
+            AuditEventType.CUSTOMER_CONSENT_REQUESTED,
+            resource_type="consent",
+            resource_id=consent.id,
+            outcome=detail,
+            message=f"question='{CONSENT_QUESTION}'",
+            details={"payment_id": payment.id},
+        )
+        return consent
+
+    def _latest_consent(self, db: Session, payment_id: str) -> Optional[ConsentRequestRecord]:
+        return (
+            db.query(ConsentRequestRecord)
+            .filter(ConsentRequestRecord.payment_id == payment_id)
+            .order_by(ConsentRequestRecord.requested_at.desc())
+            .first()
+        )
 
     # ------------------------------------------------------------------
     # helpers
@@ -323,6 +422,10 @@ class SupervisorAgent(BaseAgent):
             db.add(recovery_record)
             db.flush()
 
+            # Human override already expresses intent; route only AI-made plans.
+            if override_strategy is None:
+                await self._apply_routing(db, record, txn, plan, recovery_record)
+
         cache = await get_cache()
         await cache.set_json(f"plan:{plan.plan_id}", plan.model_dump(mode="json"))
         return plan, recovery_record
@@ -410,6 +513,25 @@ class SupervisorAgent(BaseAgent):
         payment = self._get_payment(db, recovery.payment_id)
         txn = payment.to_domain()
 
+        routing = (recovery.analysis_json or {}).get("routing") or {}
+        if routing.get("action") == RoutingAction.HUMAN_ESCALATION.value:
+            raise SupervisorError(
+                "low-confidence payment routed to human triage - resolve via triage override first"
+            )
+        if routing.get("action") == RoutingAction.ASK_CUSTOMER.value:
+            consent = self._latest_consent(db, recovery.payment_id)
+            if consent is not None and consent.status == "awaiting":
+                raise SupervisorError("awaiting customer consent (YES/NO) before execution")
+            if (
+                consent is not None
+                and consent.status == "declined"
+                and consent.deferred_until is not None
+                and utcnow() < consent.deferred_until
+            ):
+                raise SupervisorError(
+                    f"customer declined help - deferred until {consent.deferred_until.isoformat()}"
+                )
+
         result = await self.executor.run(plan, txn, dry_run=dry_run)
 
         if dry_run:
@@ -418,6 +540,20 @@ class SupervisorAgent(BaseAgent):
         else:
             recovery.apply_result(result)
             self._log_learning_event(recovery, plan, result, payment)
+            if not result.success and routing.get("monitor"):
+                # 70-85% band executed automatically but under surveillance.
+                self.audit(
+                    AuditEventType.MONITORED_EXECUTION_FLAGGED,
+                    resource_type="recovery",
+                    resource_id=recovery.id,
+                    outcome="monitored_execution_failed",
+                    severity=AuditSeverity.ERROR,
+                    details={
+                        "payment_id": recovery.payment_id,
+                        "reasons": routing.get("reasons", []),
+                        "confidence": routing.get("confidence"),
+                    },
+                )
         db.add(recovery)
         db.flush()
 

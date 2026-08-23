@@ -69,6 +69,7 @@ export const recoveryAPI = {
 };
 
 export const metricsAPI = {
+  getSummary: (periodDays = 30) => apiClient.get<Record<string, unknown>>('/metrics/summary', { params: { period_days: periodDays } }),
   getRecoveryRate: () => apiClient.get<{ rate: number; target: number }>('/metrics/recovery-rate'),
 
   getRecovered: () => apiClient.get<{ amount: number; currency: string }>('/metrics/total-recovered'),

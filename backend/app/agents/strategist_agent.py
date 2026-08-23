@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import time
 import uuid
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
 from app.agents.base_agent import BaseAgent
@@ -13,6 +14,8 @@ from app.agents.prompts import STRATEGY_SELECTOR_SYSTEM_PROMPT
 from app.core.config import get_settings
 from app.ml.data_preprocessor import build_features, build_strategy_features
 from app.ml.recovery_classifier import get_recovery_classifier
+from app.ml.contact_time_predictor import get_contact_time_predictor
+from app.integrations.competitor_pricing import get_competitor_pricing_client
 from app.models.audit import AuditEventType
 from app.models.payment import PaymentTransaction
 from app.models.recovery import (
@@ -74,7 +77,7 @@ class StrategistAgent(BaseAgent):
                 "retry": RecoveryStrategy.SMART_RETRY,
                 "sms": RecoveryStrategy.NUDGE_DIGITAL,
                 "call": RecoveryStrategy.HIGH_TOUCH_VOICE,
-                "offer": RecoveryStrategy.NUDGE_DIGITAL,
+                "offer": RecoveryStrategy.OFFER,
                 "escalate": RecoveryStrategy.CRM_HUMAN_ESCALATION,
             }.get(prediction["recommended_strategy"], strategy)
 
@@ -86,7 +89,11 @@ class StrategistAgent(BaseAgent):
             if learned is not None:
                 strategy = learned
 
+        offer = await self._evaluate_offer(txn) if strategy == RecoveryStrategy.OFFER else {}
+        if offer.get("requires_human_review"):
+            strategy = RecoveryStrategy.CRM_HUMAN_ESCALATION
         steps = self._build_steps(strategy, analysis, ranked, txn.amount_inr, settings.high_value_threshold_inr)
+        steps = self._schedule_contact_steps(steps, txn)
         total_cost = sum(step.estimated_cost_paise for step in steps)
         expected_success = self._expected_success(strategy, analysis, ranked)
 
@@ -103,6 +110,12 @@ class StrategistAgent(BaseAgent):
             total_estimated_cost_paise=total_cost,
             rationale=rationale,
             created_by=self.name,
+            original_price_inr=txn.amount_inr if offer else None,
+            competitor_price_inr=offer.get("competitor_price_inr"),
+            discount_inr=offer.get("discount_inr", 0.0),
+            offer_price_inr=offer.get("offer_price_inr"),
+            offer_message=offer.get("offer_message", ""),
+            requires_human_review=offer.get("requires_human_review", False),
         )
 
         self.audit(
@@ -120,6 +133,57 @@ class StrategistAgent(BaseAgent):
             },
         )
         return plan
+
+    async def _evaluate_offer(self, txn: PaymentTransaction) -> Dict[str, object]:
+        """Calculate a capped competitor match without crossing product cost."""
+        metadata = txn.meta
+        original = txn.amount_inr
+        try:
+            product_cost = float(metadata.get("product_cost_inr", ""))
+        except (TypeError, ValueError):
+            product_cost = original
+        competitor = await get_competitor_pricing_client().fetch_price(metadata)
+        result: Dict[str, object] = {"competitor_price_inr": competitor}
+        if competitor is None or original <= product_cost or competitor >= original:
+            return result
+
+        requested_discount = original - competitor
+        if requested_discount > 5000:
+            return {**result, "requires_human_review": True}
+        discount = min(requested_discount, original * 0.20)
+        offer_price = original - discount
+        if offer_price < product_cost:
+            return result
+        discount = round(discount, 2)
+        offer_price = round(original - discount, 2)
+        return {
+            **result,
+            "discount_inr": discount,
+            "offer_price_inr": offer_price,
+            "offer_message": f"We found this cheaper elsewhere (₹{competitor:,.0f}). We'll offer ₹{discount:,.0f} off. Pay ₹{offer_price:,.0f} instead?",
+        }
+
+    def _schedule_contact_steps(self, steps: List[RecoveryStep], txn: PaymentTransaction) -> List[RecoveryStep]:
+        predictor = get_contact_time_predictor()
+        prediction = predictor.predict(txn.meta)
+        high_value = txn.amount_inr >= get_settings().high_value_threshold_inr
+        now = datetime.now(timezone.utc)
+        scheduled: List[RecoveryStep] = []
+        for step in steps:
+            if step.channel not in {RecoveryChannel.SMS, RecoveryChannel.VOICE_IVR}:
+                scheduled.append(step)
+                continue
+            if prediction.success_probability < predictor.MIN_SUCCESS_PROBABILITY:
+                continue
+            immediate = high_value and prediction.success_probability > predictor.HIGH_SUCCESS_PROBABILITY
+            at = predictor.scheduled_at(prediction, now, immediate=immediate)
+            scheduled.append(step.model_copy(update={
+                "delay_minutes": 0 if immediate else max(0, int((at - now).total_seconds() // 60)),
+                "scheduled_at": at,
+                "predicted_success_probability": prediction.success_probability,
+                "contact_timezone": prediction.timezone,
+            }))
+        return scheduled
 
     async def _learned_strategy_override(
         self,
@@ -274,6 +338,9 @@ class StrategistAgent(BaseAgent):
                 make(2, RecoveryChannel.SMS, 30),
                 make(3, RecoveryChannel.GATEWAY_RETRY, max(analysis.suggested_wait_minutes, 120)),
             ]
+
+        if strategy == RecoveryStrategy.OFFER:
+            return []
 
         if strategy == RecoveryStrategy.HIGH_TOUCH_VOICE:
             steps = [

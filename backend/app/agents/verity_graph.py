@@ -28,9 +28,9 @@ from app.core.logging_config import get_logger
 from app.database.models import AuditLog, PaymentRecord
 from app.models.payment import PaymentTransaction, utcnow
 from app.models.recovery import FailureAnalysis
-from app.integrations.email_provider import build_recovery_email, get_email_provider
-from app.integrations.sms_provider import build_recovery_sms, get_sms_provider
-from app.integrations.voice_provider import build_hinglish_script, get_voice_provider
+from app.integrations.email_provider import get_email_provider
+from app.integrations.sms_provider import get_sms_provider
+from app.integrations.voice_provider import get_voice_provider
 from app.utils.formatters import format_inr, mask_email
 
 logger = get_logger("drishti.verity")
@@ -386,20 +386,23 @@ class VerityExecutionOrchestrator(BaseAgent):
         return [WorkflowStep(step=1, action="WAIT", wait_hours=72, status="scheduled", detail="defer 72h")]
 
     async def _perform_action(self, txn: PaymentTransaction, step: WorkflowStep) -> str:
+        from app.i18n.messages import detect_language, render_email, render_sms, render_voice_script
+
+        language = detect_language(txn.meta)
         if step.action == "SMS":
-            content = build_recovery_sms(txn.customer.name, format_inr(txn.amount_inr))
+            content = render_sms(language, txn.customer.name, format_inr(txn.amount_inr))
             result = await get_sms_provider().send(txn.customer.phone, content)
             if not result.success:
                 raise RuntimeError(result.detail or "sms send failed")
             return f"sms sent ({result.reference})"
         if step.action == "EMAIL":
-            content = build_recovery_email(txn.customer.name, format_inr(txn.amount_inr))
+            content = render_email(language, txn.customer.name, format_inr(txn.amount_inr))
             result = await get_email_provider().send(txn.customer.email, content)
             if not result.success:
                 raise RuntimeError(result.detail or "email send failed")
             return f"email sent ({result.reference})"
         if step.action == "VOICE":
-            script = build_hinglish_script(txn.customer.name, format_inr(txn.amount_inr))
+            script = render_voice_script(language, txn.customer.name, format_inr(txn.amount_inr))
             result = await get_voice_provider().place_call(txn.customer.phone, script)
             if not result.success:
                 raise RuntimeError(result.detail or "voice call failed")

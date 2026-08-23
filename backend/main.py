@@ -122,6 +122,7 @@ def create_app() -> FastAPI:
     application.include_router(verity.router, prefix=api)
     application.include_router(audit.router, prefix=api)
     application.include_router(metrics.router, prefix=api)
+    application.include_router(metrics.stream_router, prefix=api)
 
     logger.info("app.created", routes=len(application.routes))
     return application

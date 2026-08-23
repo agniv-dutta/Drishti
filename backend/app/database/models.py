@@ -163,6 +163,58 @@ class PaymentRecord(Base):
 # Recoveries
 # ---------------------------------------------------------------------------
 
+class TriageTicketRecord(Base):
+    __tablename__ = "triage_tickets"
+    __table_args__ = (
+        Index("ix_triage_tickets_status_priority", "status", "priority_score"),
+    )
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    payment_id: Mapped[str] = mapped_column(ForeignKey("payments.id"), index=True)
+    recovery_id: Mapped[Optional[str]] = mapped_column(String(32))
+
+    failure_reason: Mapped[Optional[str]] = mapped_column(String(40))
+    recommended_strategy: Mapped[str] = mapped_column(String(32))
+    confidence: Mapped[float] = mapped_column(Float, default=0.0)
+
+    customer_name: Mapped[str] = mapped_column(String(120))
+    customer_email_masked: Mapped[str] = mapped_column(String(160))
+    amount_paise: Mapped[int] = mapped_column(BigInteger, default=0)
+    customer_history: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+
+    low_confidence_reasons: Mapped[List[str]] = mapped_column(JSON, default=list)
+    priority_score: Mapped[float] = mapped_column(Float, default=0.0)
+    status: Mapped[str] = mapped_column(String(20), default="open")  # open | resolved
+
+    overridden_strategy: Mapped[Optional[str]] = mapped_column(String(32))
+    custom_message: Mapped[Optional[str]] = mapped_column(Text)
+    resolution_note: Mapped[Optional[str]] = mapped_column(Text)
+    resolved_by: Mapped[Optional[str]] = mapped_column(String(120))
+    resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class ConsentRequestRecord(Base):
+    """Customer outreach awaiting a YES/NO before automated recovery continues."""
+
+    __tablename__ = "consent_requests"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    payment_id: Mapped[str] = mapped_column(ForeignKey("payments.id"), index=True)
+
+    question: Mapped[str] = mapped_column(Text)
+    channel: Mapped[str] = mapped_column(String(20), default="sms")
+    status: Mapped[str] = mapped_column(String(20), default="awaiting", index=True)
+    # awaiting | accepted | declined
+
+    chatbot_session_id: Mapped[Optional[str]] = mapped_column(String(40))
+    deferred_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+
+    requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    responded_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+
+
 class RecoveryRecord(Base):
     __tablename__ = "recoveries"
 

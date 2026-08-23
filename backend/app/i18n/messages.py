@@ -10,6 +10,7 @@ rates in the Indian market.
 
 from __future__ import annotations
 
+import inspect
 from enum import Enum
 from typing import Callable, Dict, List, Optional
 
@@ -110,22 +111,8 @@ _CTA_PLAIN: Dict[Language, str] = {
 }
 
 
-@dataclass
-class LocalizedEmail:
-    subject: str
-    plain: str
-    html: str
-
-
-@dataclass
-class LocalizedVoiceScript:
-    lines: List[str]
-    language: Language
-
-    def as_text(self) -> str:
-        return "\n".join(self.lines)
-
-
+# ---------------------------------------------------------------------------
+# rendering
 # ---------------------------------------------------------------------------
 # detection
 # ---------------------------------------------------------------------------
@@ -222,7 +209,7 @@ def render_email(
         else _CTA_PLAIN[language]
     )
     html = f"<p>{plain.replace(chr(10), '<br>')}</p><p>{html_cta}</p>"
-    return LocalizedEmail(subject=subject, plain=plain, html=html)
+    return EmailContent(subject=subject, plain=plain, html=html)
 
 
 def render_voice_script(
@@ -231,7 +218,7 @@ def render_voice_script(
     amount_str: str,
     merchant: str = "merchant",
     payment_link: Optional[str] = None,
-) -> LocalizedVoiceScript:
+) -> IVRScript:
     first_name = customer_name.split(" ")[0]
     scripts: Dict[Language, List[str]] = {
         Language.ENGLISH: [
@@ -259,7 +246,7 @@ def render_voice_script(
             "நன்றி!",
         ],
     }
-    return LocalizedVoiceScript(lines=scripts[language], language=language)
+    return IVRScript(lines=scripts[language], language=language.value)
 
 
 # ---------------------------------------------------------------------------
@@ -291,6 +278,8 @@ async def generate_sms_via_llm(
         "Write only the final SMS body, no quotes, no explanations."
     )
     text = llm_fn(system, prompt)
+    if inspect.isawaitable(text):
+        text = await text
     if not text:
         return None
     cleaned = " ".join(text.strip().strip('"').split())

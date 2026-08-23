@@ -118,6 +118,16 @@ class Settings(BaseSettings):
     consensus_enabled: bool = True
     consensus_amount_threshold_inr: float = 50000.0
 
+    # ---- Multilingual outreach ----
+    default_language: str = "en"
+
+    # ---- Confidence-based human routing ----
+    auto_execute_confidence: float = 0.85      # > this: fully automatic
+    monitor_confidence: float = 0.70           # above this: execute + watch
+    ask_customer_confidence: float = 0.50      # below monitor line: ask first
+    triage_high_value_inr: float = 25000.0     # "high value" reason flag
+    consent_defer_hours: int = 72              # declined-consent cooldown
+
     # ------------------------------------------------------------------
     @field_validator("debug", mode="before")
     @classmethod

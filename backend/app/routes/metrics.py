@@ -5,10 +5,13 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, Depends, Query, Response
+import asyncio
+
+from fastapi import APIRouter, Depends, Query, Response, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
 from app.cache.redis_client import get_cache
+from app.core.config import get_settings
 from app.core.security import require_api_key
 from app.database.models import RecoveryRecord
 from app.database.session import get_db
@@ -24,7 +27,28 @@ from app.schemas.metrics_schemas import (
 from app.utils.formatters import paise_to_rupees
 
 router = APIRouter(prefix="/metrics", tags=["metrics"], dependencies=[Depends(require_api_key)])
+stream_router = APIRouter(prefix="/metrics", tags=["metrics"])
 collector = MetricsCollector()
+
+
+@stream_router.websocket("/stream")
+async def metrics_stream(websocket: WebSocket, api_key: str | None = None) -> None:
+    """Push fresh metric snapshots to the analytics dashboard."""
+    if not api_key or api_key not in get_settings().valid_api_keys:
+        await websocket.close(code=1008)
+        return
+    await websocket.accept()
+    db: Session | None = None
+    try:
+        db = next(get_db())
+        while True:
+            await websocket.send_json(collector.collect(db, period_days=30))
+            await asyncio.sleep(10)
+    except (WebSocketDisconnect, StopAsyncIteration):
+        return
+    finally:
+        if db is not None:
+            db.close()
 
 
 @router.get("/summary")
