@@ -1,0 +1,83 @@
+:root {
+  /* Primary */
+  --coral: #FF6B54;
+  --deep-plum: #2D1B4E;
+  --champagne: #F3E8D1;
+  --sage: #9B8B7D;
+  --rose: #D64A63;
+  --gold: #D4A574;
+
+  /* Supporting */
+  --cream: #FBF8F3;
+  --charcoal: #4A4A4A;
+  --apricot: #F4B895;
+  --slate: #6B7280;
+  
+  /* Semantic */
+  --success: var(--coral);
+  --success-accent: var(--sage);
+  --warning: var(--apricot);
+  --warning-accent: var(--rose);
+  --error: var(--rose);
+  --error-accent: var(--coral);
+  --info: var(--coral);
+  --info-bg: var(--champagne);
+  --neutral: var(--sage);
+  --neutral-accent: var(--charcoal);
+
+  /* Typography */
+  --font-heading: 'Sohne', 'Clash Display', 'DM Sans', sans-serif;
+  --font-body: 'Outfit', 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--charcoal);
+  background-color: var(--cream);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--deep-plum);
+}
+
+/* Base Styles */
+h1 { font-size: 48px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+h2 { font-size: 36px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.2; }
+h3 { font-size: 28px; font-weight: 600; line-height: 1.3; }
+
+.body-reg { font-size: 16px; font-weight: 400; line-height: 1.6; }
+.body-sm { font-size: 14px; font-weight: 400; line-height: 1.5; }
+.caption { font-size: 12px; font-weight: 500; line-height: 1.4; }
+
+.code { font-family: var(--font-mono); font-size: 13px; font-weight: 400; }
+.amount { font-family: var(--font-mono); font-size: 18px; font-weight: 600; }
+
+/* Custom utility classes */
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+.overflow-hidden { overflow: hidden; }
+
+/* Blob Animation */
+@keyframes blob-float {
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}

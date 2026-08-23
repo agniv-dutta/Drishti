@@ -19,6 +19,7 @@ import inspect
 import json
 import math
 import shutil
+import tempfile
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -220,7 +221,7 @@ class RecoveryFeatureBuilder(BaseEstimator, TransformerMixin):
 def build_preprocessor() -> Pipeline:
     numeric_branch = Pipeline(
         steps=[
-            ("impute", KNNImputer(n_neighbors=5, weights="distance", n_jobs=-1)),
+            ("impute", KNNImputer(n_neighbors=5, weights="distance")),
             ("scale", StandardScaler()),
         ]
     )
@@ -443,8 +444,8 @@ def _train_flaml(
     automl = AutoML()
     started = time.perf_counter()
     automl.fit(
-        X=Xe,
-        y=y,
+        X_train=Xe,
+        y_train=y,
         task="regression",
         metric="mae",
         eval_method="cv",
@@ -482,12 +483,10 @@ class _H2OMojoPredictor:
     def predict(self, X: Any) -> np.ndarray:
         import h2o
         from h2o.frame import H2OFrame
-        from h2o.model.model_base import ModelBase
 
         if not h2o.connection():
             h2o.init()
         frame = H2OFrame(pd.DataFrame(np.asarray(X), columns=self.feature_names))
-        model = h2o.get_model if False else None
         loaded = h2o.upload_mojo(self.mojo_path)
         preds = loaded.predict(frame).as_data_frame(use_multi_thread=True)
         return preds.iloc[:, 0].to_numpy(dtype=float)
@@ -655,9 +654,6 @@ def _compute_feature_importance(
     y_val: np.ndarray,
     seed: int,
 ) -> Tuple[str, Dict[str, float]]:
-    base_estimator = getattr(candidate.estimator, "__class__", None)
-    if hasattr(base_estimator, "fit") and hasattr(base_estimator, "feature_importances_") if False else False:
-        pass
     fitted = None
     est_cls = candidate.estimator.__class__
     if hasattr(est_cls, "feature_importances_"):
@@ -710,7 +706,7 @@ def run_pipeline(
     out_dir: Optional[Path] = None,
 ) -> Dict[str, Any]:
     t0 = time.perf_counter()
-    resolved_out = Path(out_dir) if out_dir else Path(__file__).resolve().parents[1] / "models" / ARTIFACT_DIRNAME
+    resolved_out = Path(out_dir) if out_dir else Path(__file__).resolve().parents[2] / "models" / ARTIFACT_DIRNAME
     resolved_out.mkdir(parents=True, exist_ok=True)
 
     df = generate_synthetic_recovery_data(n_rows=n_rows, seed=seed)
