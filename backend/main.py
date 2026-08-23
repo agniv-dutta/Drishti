@@ -22,7 +22,7 @@ from app.core.config import get_settings
 from app.core.logging_config import configure_logging, get_logger
 from app.database.session import dispose_db, init_db
 from app.utils.formatters import error_response
-from app.routes import audit, dashboard, health, metrics, payment, razorpay, recovery, verity
+from app.routes import audit, dashboard, health, metrics, payment, razorpay, recovery, triage, verity, workflows
 
 
 @asynccontextmanager
@@ -123,6 +123,9 @@ def create_app() -> FastAPI:
     application.include_router(audit.router, prefix=api)
     application.include_router(metrics.router, prefix=api)
     application.include_router(metrics.stream_router, prefix=api)
+    application.include_router(triage.router, prefix=api)
+    application.include_router(triage.public_router, prefix=api)
+    application.include_router(workflows.router, prefix=api)
 
     logger.info("app.created", routes=len(application.routes))
     return application
@@ -142,3 +145,4 @@ if __name__ == "__main__":
         reload=cfg.debug and not cfg.is_production,
         log_config=None,
     )
+

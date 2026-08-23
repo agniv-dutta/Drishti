@@ -62,7 +62,7 @@ class StrategyDecision(BaseModel):
 
 class WorkflowStep(BaseModel):
     step: int
-    action: Literal["SMS", "EMAIL", "VOICE", "RETRY", "WAIT", "CRM"]
+    action: Literal["SMS", "EMAIL", "VOICE", "RETRY", "WAIT", "CRM", "STOP"]
     wait_hours: int = 0
     status: Literal["pending", "scheduled", "sent", "failed", "skipped"] = "pending"
     detail: str = ""
@@ -309,6 +309,10 @@ class VerityExecutionOrchestrator(BaseAgent):
             if step.action == "WAIT":
                 step.status = "scheduled"
                 continue
+            if step.action == "STOP":
+                step.status = "skipped"
+                step.detail = "custom workflow stop recovery"
+                break
 
             if audit_gate is not None:
                 decision = await audit_gate(step.action, recovered)
@@ -354,6 +358,9 @@ class VerityExecutionOrchestrator(BaseAgent):
         )
 
     def _build_workflow(self, strategy: StrategyDecision, txn: PaymentTransaction) -> List[WorkflowStep]:
+        custom = self._custom_workflow(txn)
+        if custom:
+            return custom
         if strategy.strategy == "RETRY":
             return [
                 WorkflowStep(step=1, action="RETRY", wait_hours=0),
@@ -384,6 +391,46 @@ class VerityExecutionOrchestrator(BaseAgent):
         if strategy.strategy == "ESCALATE":
             return [WorkflowStep(step=1, action="CRM", wait_hours=0, detail="human escalation")]
         return [WorkflowStep(step=1, action="WAIT", wait_hours=72, status="scheduled", detail="defer 72h")]
+
+    def _custom_workflow(self, txn: PaymentTransaction) -> List[WorkflowStep]:
+        """Load the merchant-authored linear flow for this customer segment."""
+        if self.db is None:
+            return []
+        from app.database.models import RecoveryWorkflow
+
+        segment = str(txn.meta.get("customer_segment", "all")).lower()
+        records = self.db.query(RecoveryWorkflow).order_by(RecoveryWorkflow.created_at.desc()).all()
+        selected = None
+        for record in records:
+            payload = record.steps_json or {}
+            target = str(payload.get("target_segment", "all")).lower() if isinstance(payload, dict) else "all"
+            if target in {segment, "all"}:
+                selected = payload
+                if target == segment:
+                    break
+        if not isinstance(selected, dict):
+            return []
+        action_map = {"retry": "RETRY", "sms": "SMS", "email": "EMAIL", "call": "VOICE", "offer": "EMAIL", "stop": "STOP", "escalate": "CRM"}
+        workflow: List[WorkflowStep] = []
+        for index, item in enumerate(selected.get("steps", []), start=1):
+            action = str(item.get("type", "")).lower()
+            if action == "wait":
+                target_action = "WAIT"
+            else:
+                target_action = action_map.get(action)
+            if target_action is None:
+                continue
+            delay = str(item.get("delay", "0h"))
+            amount = int(delay[:-1] or 0) if delay[:-1].isdigit() else 0
+            wait_hours = amount * (24 if delay.endswith("d") else 1)
+            workflow.append(WorkflowStep(
+                step=index,
+                action=target_action,
+                wait_hours=wait_hours,
+                status="scheduled" if wait_hours else "pending",
+                detail=f"custom workflow: {record.template_name}",
+            ))
+        return workflow
 
     async def _perform_action(self, txn: PaymentTransaction, step: WorkflowStep) -> str:
         from app.i18n.messages import detect_language, render_email, render_sms, render_voice_script

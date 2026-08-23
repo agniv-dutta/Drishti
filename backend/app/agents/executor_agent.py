@@ -14,7 +14,7 @@ from typing import Callable, Dict, Optional, Tuple
 from app.agents.base_agent import BaseAgent
 from app.agents.prompts import EXECUTION_ORCHESTRATOR_SYSTEM_PROMPT
 from app.integrations.crm_client import build_recovery_task, get_crm_provider
-from app.integrations.email_provider import get_email_provider
+from app.integrations.email_provider import EmailContent, get_email_provider
 from app.integrations.razorpay_client import get_razorpay_client
 from app.integrations.sms_provider import get_sms_provider
 from app.integrations.voice_provider import get_voice_provider
@@ -192,7 +192,11 @@ class ExecutorAgent(BaseAgent):
         from app.i18n.messages import detect_language, render_email
 
         language = detect_language(txn.meta)
-        content = render_email(language, txn.customer.name, format_inr(txn.amount_inr))
+        custom = txn.meta.get("custom_message")
+        if custom:
+            content = EmailContent(subject="Regarding your recent payment", plain=custom, html=f"<p>{custom}</p>")
+        else:
+            content = render_email(language, txn.customer.name, format_inr(txn.amount_inr))
         result = await get_email_provider().send(txn.customer.email, content)
         if not result.success:
             raise RuntimeError(result.detail or "email send failed")
@@ -204,7 +208,10 @@ class ExecutorAgent(BaseAgent):
         from app.i18n.messages import detect_language, generate_sms_via_llm, render_sms
 
         language = detect_language(txn.meta)
-        message = render_sms(language, txn.customer.name, format_inr(txn.amount_inr))
+        # A triage agent may have hand-edited the copy - send it verbatim.
+        message = txn.meta.get("custom_message") or render_sms(
+            language, txn.customer.name, format_inr(txn.amount_inr)
+        )
         result = await get_sms_provider().send(txn.customer.phone, message)
         if not result.success:
             raise RuntimeError(result.detail or "sms send failed")
@@ -214,9 +221,34 @@ class ExecutorAgent(BaseAgent):
         self, txn: PaymentTransaction, step: RecoveryStep
     ) -> Tuple[str, Optional[str], int]:
         from app.i18n.messages import detect_language, render_voice_script
+        from app.ml.voice_emotion import get_voice_emotion_analyzer
 
         language = detect_language(txn.meta)
+        transcript = txn.meta.get("voice_transcript", "")
+        consent = str(txn.meta.get("call_recording_consent", "")).lower() in {"1", "true", "yes"}
+        decision = get_voice_emotion_analyzer().analyze(transcript, txn.customer.name)
         script = render_voice_script(language, txn.customer.name, format_inr(txn.amount_inr))
+        script.record_call = consent
+        script.emotion = decision.emotion.value
+        script.next_action = decision.next_action
+        if transcript:
+            script.lines.insert(2, decision.reply)
+            self.audit(
+                AuditEventType.VOICE_EMOTION_ANALYZED,
+                resource_type="voice_call",
+                resource_id=txn.payment_id,
+                outcome=decision.emotion.value,
+                details={"sentiment": decision.sentiment, "next_action": decision.next_action, "recorded": consent},
+            )
+        if decision.emotion.value == "angry":
+            self.audit(
+                AuditEventType.VOICE_HUMAN_ESCALATION,
+                resource_type="voice_call",
+                resource_id=txn.payment_id,
+                outcome="human_required",
+                message="Customer upset, needs human touch",
+                details={"sentiment": decision.sentiment},
+            )
         result = await get_voice_provider().place_call(txn.customer.phone, script)
         if not result.success:
             raise RuntimeError(result.detail or "ivr call failed")

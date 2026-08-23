@@ -4,6 +4,7 @@ import DashboardOverview, { type DashboardSection } from './components/Dashboard
 import DashboardPage from './components/DashboardPage';
 import FeaturePage, { type FeaturePageSlug } from './components/FeaturePage';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
+import WorkflowBuilder from './components/WorkflowBuilder';
 
 type Route =
   | { name: 'landing' }
@@ -16,6 +17,7 @@ const isDashboardSection = (value: string | undefined): value is DashboardSectio
   value === 'payments' ||
   value === 'recoveries' ||
   value === 'analytics' ||
+  value === 'workflows' ||
   value === 'audit-trail' ||
   value === 'settings';
 
@@ -60,6 +62,7 @@ function App() {
     switch (route.name) {
       case 'dashboard':
         if (route.section === 'analytics') return <AnalyticsDashboard />;
+        if (route.section === 'workflows') return <WorkflowBuilder />;
         return <DashboardOverview section={route.section} />;
       case 'feature':
         return <FeaturePage slug={route.slug} />;

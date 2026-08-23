@@ -22,6 +22,9 @@ class IVRScript:
     lines: List[str] = field(default_factory=list)
     language: str = "hinglish"
     max_duration_seconds: int = 60
+    record_call: bool = False
+    emotion: str = "neutral"
+    next_action: str = "continue_standard_recovery"
 
     def as_text(self) -> str:
         return "\n".join(self.lines)
@@ -32,6 +35,10 @@ def build_hinglish_script(
     amount_str: str,
     merchant: str = "merchant",
     payment_link: Optional[str] = None,
+    reply: Optional[str] = None,
+    emotion: str = "neutral",
+    next_action: str = "continue_standard_recovery",
+    record_call: bool = False,
 ) -> IVRScript:
     first_name = customer_name.split(" ")[0]
     link_line = (
@@ -39,8 +46,7 @@ def build_hinglish_script(
         if payment_link
         else "Aap apne app se kabhi bhi payment retry kar sakte hain."
     )
-    return IVRScript(
-        lines=[
+    lines = [
             f"Namaste {first_name} ji! Main Drishti se bol rahi hoon.",
             f"Aapki {amount_str} ki payment {merchant} ko fail ho gayi thi.",
             "Kya aap abhi payment complete karna chahenge?",
@@ -48,7 +54,9 @@ def build_hinglish_script(
             link_line,
             "Dhanyavaad! Aapka din shubh ho.",
         ]
-    )
+    if reply:
+        lines.insert(2, reply)
+    return IVRScript(lines=lines, record_call=record_call, emotion=emotion, next_action=next_action)
 
 
 @dataclass
@@ -99,6 +107,7 @@ class ExotelProvider(BaseVoiceProvider):
             "CallerId": self._from,
             "Url": "http://my.exotel.com/exoml/start_voice_app",  # App holding the TTS flow
             "CustomField": script.as_text()[:1000],
+            "Record": "true" if script.record_call else "false",
         }
         try:
             async with httpx.AsyncClient(timeout=20.0) as client:

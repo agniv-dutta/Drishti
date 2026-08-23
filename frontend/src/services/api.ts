@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 import type { DashboardJourney, Payment } from '../types/dashboard';
+import type { Workflow, WorkflowStep } from '../types/workflow';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -66,6 +67,12 @@ export const recoveryAPI = {
     apiClient.post('/recovery/detect', { payment_id: paymentId }),
 
   execute: (recoveryId: string) => apiClient.post(`/recovery/${recoveryId}/execute`, {}),
+};
+
+export const workflowAPI = {
+  list: () => apiClient.get<{ workflows: Workflow[] }>('/workflows'),
+  create: (data: { name: string; target_segment: string; variant?: string; steps: WorkflowStep[] }) =>
+    apiClient.post<Workflow>('/workflows/create', data),
 };
 
 export const metricsAPI = {

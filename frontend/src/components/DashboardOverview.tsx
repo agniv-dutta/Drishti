@@ -20,7 +20,7 @@ import { useDashboardStore } from '../store/dashboardStore';
 import type { DashboardActivityItem, Payment } from '../types/dashboard';
 import './DashboardOverview.css';
 
-export type DashboardSection = 'overview' | 'payments' | 'recoveries' | 'analytics' | 'audit-trail' | 'settings';
+export type DashboardSection = 'overview' | 'payments' | 'recoveries' | 'analytics' | 'workflows' | 'audit-trail' | 'settings';
 
 type DashboardOverviewProps = {
   section: DashboardSection;
@@ -78,6 +78,7 @@ const sectionLabel: Record<DashboardSection, string> = {
   payments: 'Payments',
   recoveries: 'Recoveries',
   analytics: 'Analytics',
+  workflows: 'Workflows',
   'audit-trail': 'Audit Trail',
   settings: 'Settings',
 };
@@ -212,6 +213,10 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
             <a href="#/dashboard/analytics" className={`dashboard-sidebar-item ${section === 'analytics' ? 'active' : ''}`}>
               <Grid3x3 size={18} />
               <span>Analytics</span>
+            </a>
+            <a href="#/dashboard/workflows" className={`dashboard-sidebar-item ${section === 'workflows' ? 'active' : ''}`}>
+              <Grid3x3 size={18} />
+              <span>Workflows</span>
             </a>
             <a href="#/dashboard/audit-trail" className={`dashboard-sidebar-item ${section === 'audit-trail' ? 'active' : ''}`}>
               <Grid3x3 size={18} />
