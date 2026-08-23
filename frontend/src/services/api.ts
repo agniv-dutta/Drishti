@@ -1,7 +1,7 @@
-import axios, { type AxiosInstance } from 'axios';
-import type { Payment } from '../types/dashboard';
+import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
+import type { DashboardJourney, DashboardOverview, Payment } from '../types/dashboard';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -10,28 +10,55 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('authToken');
+const getApiKey = () => import.meta.env.VITE_API_KEY || localStorage.getItem('verityApiKey') || localStorage.getItem('apiKey') || '';
 
-  if (token) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${token}`;
+apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const apiKey = getApiKey();
+  const authToken = localStorage.getItem('authToken');
+
+  if (apiKey) {
+    if (typeof config.headers.set === 'function') {
+      config.headers.set('X-API-Key', apiKey);
+    } else {
+      config.headers['X-API-Key'] = apiKey;
+    }
+  }
+
+  if (authToken) {
+    if (typeof config.headers.set === 'function') {
+      config.headers.set('Authorization', `Bearer ${authToken}`);
+    } else {
+      config.headers.Authorization = `Bearer ${authToken}`;
+    }
   }
 
   return config;
 });
 
+export const dashboardAPI = {
+  getOverview: (paymentId?: string, limit = 5) =>
+    apiClient.get<DashboardOverview>('/dashboard/overview', {
+      params: {
+        payment_id: paymentId,
+        limit,
+      },
+    }),
+
+  getJourney: (paymentId: string) =>
+    apiClient.get<DashboardJourney>(`/dashboard/journey/${paymentId}`),
+};
+
 export const paymentsAPI = {
-  list: (filters?: { status?: string; merchant_id?: string }) =>
-    apiClient.get<Payment[]>('/payments', { params: filters }),
+  list: (_filters?: { status?: string; merchant_id?: string }) =>
+    dashboardAPI.getOverview(),
 
-  get: (id: string) => apiClient.get<Payment>(`/payments/${id}`),
+  get: (id: string) => apiClient.get<Payment>(`/payment/${id}`),
 
-  ingest: (data: unknown) => apiClient.post('/payments/ingest', data),
+  ingest: (data: unknown) => apiClient.post('/payment/ingest', data),
 };
 
 export const recoveryAPI = {
-  listActive: () => apiClient.get('/recovery/active'),
+  listActive: (paymentId?: string) => dashboardAPI.getOverview(paymentId),
 
   detect: (paymentId: string) =>
     apiClient.post('/recovery/detect', { payment_id: paymentId }),

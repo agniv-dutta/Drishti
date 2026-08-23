@@ -115,6 +115,19 @@ class Settings(BaseSettings):
     verity_checkpoint_path: str = "logs/verity_checkpoints.db"
 
     # ------------------------------------------------------------------
+    @field_validator("debug", mode="before")
+    @classmethod
+    def _normalise_debug(cls, value):
+        if isinstance(value, bool) or value is None:
+            return value
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"1", "true", "yes", "on", "debug", "development"}:
+                return True
+            if normalized in {"0", "false", "no", "off", "release", "prod", "production"}:
+                return False
+        return value
+
     @field_validator("log_level")
     @classmethod
     def _normalise_log_level(cls, value: str) -> str:

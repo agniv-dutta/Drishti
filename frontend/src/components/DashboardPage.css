@@ -141,6 +141,45 @@
   font-size: 18px;
 }
 
+.journey-summary-strip {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.journey-summary-chip {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(243, 232, 209, 0.1);
+  box-shadow: 0 10px 28px rgba(14, 7, 25, 0.16);
+}
+
+.journey-summary-chip span {
+  display: block;
+  color: rgba(243, 232, 209, 0.72);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.journey-summary-chip strong {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--font-heading);
+  font-size: 24px;
+  line-height: 1;
+  color: var(--champagne);
+}
+
+.journey-summary-chip small {
+  display: block;
+  margin-top: 6px;
+  color: rgba(243, 232, 209, 0.66);
+  font-size: 12px;
+}
+
 .timeline-stage {
   position: relative;
   margin-top: 88px;
@@ -526,6 +565,83 @@
   line-height: 1.45;
 }
 
+.timeline-activity-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 96px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  padding: 0 16px;
+}
+
+.timeline-activity-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(44, 35, 58, 0.9);
+  border: 1px solid rgba(243, 232, 209, 0.1);
+  color: var(--champagne);
+  box-shadow: 0 14px 30px rgba(14, 7, 25, 0.18);
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.timeline-activity-chip:hover {
+  transform: translateY(-2px);
+  background: rgba(55, 42, 74, 0.96);
+}
+
+.timeline-activity-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 107, 84, 0.15);
+  color: var(--coral);
+  flex: 0 0 auto;
+}
+
+.timeline-activity-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.timeline-activity-copy strong {
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.timeline-activity-copy span {
+  font-size: 12px;
+  color: rgba(243, 232, 209, 0.72);
+}
+
+.timeline-activity-time {
+  font-size: 12px;
+  color: rgba(243, 232, 209, 0.58);
+}
+
+.timeline-error {
+  position: absolute;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(214, 74, 99, 0.18);
+  border: 1px solid rgba(214, 74, 99, 0.35);
+  color: #ffd9df;
+  font-size: 13px;
+}
+
 .journey-footer {
   min-height: 72px;
   padding: 16px 28px;
@@ -609,6 +725,10 @@
     padding-bottom: 40px;
   }
 
+  .journey-summary-strip {
+    grid-template-columns: 1fr;
+  }
+
   .journey-footer {
     grid-template-columns: 1fr;
     text-align: center;
@@ -635,6 +755,10 @@
   .timeline-stage {
     min-width: 980px;
     margin-top: 56px;
+  }
+
+  .timeline-activity-rail {
+    bottom: 80px;
   }
 
   .timeline-outcome {

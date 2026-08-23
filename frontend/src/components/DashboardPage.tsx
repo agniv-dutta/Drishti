@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   AlertTriangle,
@@ -6,47 +6,31 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  MessageSquareText,
+  Mail,
   PartyPopper,
+  Phone,
+  RefreshCw,
   Smartphone,
 } from 'lucide-react';
+import { useDashboardStore } from '../store/dashboardStore';
+import type { DashboardJourneyNode } from '../types/dashboard';
 import './DashboardPage.css';
 
-type JourneyNode = {
-  id: string;
-  title: string;
-  subtitle: string;
-  time?: string;
-  status?: string;
-  detail?: string;
-  badge?: string;
-  badgeTone?: 'gray' | 'sage' | 'coral' | 'rose' | 'gold';
-  x: number;
-  y: 'above' | 'below';
-  circleTone: 'coral' | 'rose' | 'gold';
-  icon: React.ReactNode;
-  completed: boolean;
-  current?: boolean;
-  reason?: string;
-  amount?: string;
-  preview?: string;
-  emphasis?: string;
-  reasoning?: string;
-};
-
-const journeyNodes: JourneyNode[] = [
+const fallbackNodes: DashboardJourneyNode[] = [
   {
     id: 'created',
     title: 'Payment Initiated',
     subtitle: 'Payment Created',
     time: '2:15 PM',
-    status: 'Completed',
     badge: 'Completed',
     badgeTone: 'sage',
     x: 7,
     y: 'above',
     circleTone: 'coral',
-    icon: <Check size={16} />,
     completed: true,
+    detail: 'The payment event was recorded and routed into the recovery pipeline.',
+    status: 'created',
   },
   {
     id: 'declined',
@@ -57,23 +41,23 @@ const journeyNodes: JourneyNode[] = [
     x: 22,
     y: 'below',
     circleTone: 'rose',
-    icon: <AlertTriangle size={16} />,
     completed: true,
     reason: 'Failure reason',
-    detail: 'Issuer returned a soft decline from the bank with no available balance at authorization time.',
+    detail: 'Issuer returned a soft decline with no available balance at authorization time.',
   },
   {
     id: 'analysis',
     title: 'AI Analyzed',
     subtitle: 'AI Analysis',
+    badge: '78% confidence',
+    badgeTone: 'coral',
     x: 40,
     y: 'above',
     circleTone: 'coral',
-    icon: <Bot size={16} />,
     completed: true,
-    detail: 'Recommended SMS outreach with a 78% confidence score based on customer history and retry timing.',
+    detail: 'Recommended SMS outreach based on customer history and retry timing.',
     reasoning:
-      'The model weighted previous SMS response rates, time-of-day behavior, and the low friction path to a payment link. It rejected call-first recovery because the customer had a stronger SMS completion history.',
+      'The model weighted previous SMS response rates, time-of-day behavior, and the low-friction payment link path.',
   },
   {
     id: 'sms',
@@ -83,7 +67,6 @@ const journeyNodes: JourneyNode[] = [
     x: 58,
     y: 'below',
     circleTone: 'coral',
-    icon: <Smartphone size={16} />,
     completed: true,
     preview: 'Hi, payment failed. Retry now: [link]',
     detail: 'A personalized payment link was sent after the decline with a short retry prompt.',
@@ -92,44 +75,91 @@ const journeyNodes: JourneyNode[] = [
     id: 'retried',
     title: 'Retry Successful',
     subtitle: 'Payment Retried',
-    amount: '₹5,000',
+    amount: '5000',
     x: 76,
     y: 'above',
     circleTone: 'coral',
-    icon: <CheckCircle2 size={16} />,
     completed: true,
-    detail: 'The customer retried the payment from the SMS link and the transaction cleared successfully.',
+    detail: 'The customer retried the payment from the recovery link and the transaction cleared successfully.',
   },
   {
     id: 'complete',
     title: 'Revenue Recovered',
     subtitle: 'Recovery Complete',
-    amount: '₹5,000',
+    amount: '5000',
     x: 92,
     y: 'below',
     circleTone: 'gold',
-    icon: <PartyPopper size={16} />,
     completed: true,
     current: true,
     detail: 'Recovery closed with a fully successful payment and a clean audit trail.',
   },
 ];
 
-const linkSegments = [
-  { id: 'seg-1', left: 7, width: 15, tone: 'rose-dashed' },
-  { id: 'seg-2', left: 22, width: 18, tone: 'coral' },
-  { id: 'seg-3', left: 40, width: 18, tone: 'coral' },
-  { id: 'seg-4', left: 58, width: 18, tone: 'coral' },
-  { id: 'seg-5', left: 76, width: 16, tone: 'coral' },
-];
+const iconMap: Record<string, React.ReactNode> = {
+  created: <Check size={16} />,
+  declined: <AlertTriangle size={16} />,
+  analysis: <Bot size={16} />,
+  sms: <Smartphone size={16} />,
+  retried: <CheckCircle2 size={16} />,
+  complete: <PartyPopper size={16} />,
+};
+
+const activityIconMap: Record<string, React.ReactNode> = {
+  Envelope: <Mail size={16} />,
+  Mail: <Mail size={16} />,
+  Phone: <Phone size={16} />,
+  RotateCcw: <RefreshCw size={16} />,
+  ShieldAlert: <AlertTriangle size={16} />,
+  Sparkles: <MessageSquareText size={16} />,
+};
+
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('en-IN', {
+    maximumFractionDigits: 0,
+  }).format(Math.round(value));
 
 const DashboardPage: React.FC = () => {
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>('analysis');
+  const loadDashboard = useDashboardStore((state) => state.loadDashboard);
+  const selectPayment = useDashboardStore((state) => state.selectPayment);
+  const journey = useDashboardStore((state) => state.journey);
+  const payments = useDashboardStore((state) => state.payments);
+  const recoveryRate = useDashboardStore((state) => state.recoveryRate);
+  const targetRate = useDashboardStore((state) => state.targetRate);
+  const totalRecovered = useDashboardStore((state) => state.totalRecovered);
+  const totalPaymentsProcessed = useDashboardStore((state) => state.totalPaymentsProcessed);
+  const activityFeed = useDashboardStore((state) => state.activityFeed);
+  const selectedPaymentId = useDashboardStore((state) => state.selectedPaymentId);
+  const isLoading = useDashboardStore((state) => state.isLoading);
+  const error = useDashboardStore((state) => state.error);
 
+  const [expandedId, setExpandedId] = useState<string | null>('analysis');
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
+
+  const journeyNodes = journey?.nodes.length ? journey.nodes : fallbackNodes;
+  const currentJourney = journey ?? null;
   const activeNode = useMemo(
     () => journeyNodes.find((node) => node.id === hoveredId) ?? null,
-    [hoveredId],
+    [hoveredId, journeyNodes],
+  );
+
+  const linkSegments = useMemo(
+    () =>
+      journeyNodes.slice(0, -1).map((node, index) => {
+        const next = journeyNodes[index + 1];
+        const tone = index === 0 ? 'rose-dashed' : 'coral';
+        return {
+          id: `${node.id}-${next.id}`,
+          left: node.x,
+          width: Math.max(next.x - node.x, 8),
+          tone,
+        };
+      }),
+    [journeyNodes],
   );
 
   return (
@@ -161,11 +191,31 @@ const DashboardPage: React.FC = () => {
         </div>
       </header>
 
-      <main className="journey-main">
+      <main className="journey-main" aria-busy={isLoading}>
         <section className="journey-hero">
           <p className="journey-kicker">Single payment timeline</p>
-          <h1>Recovery Journey</h1>
-          <p className="journey-subtitle">Transaction ID: #VR-8924-A</p>
+          <h1>{currentJourney?.title ?? 'Recovery Journey'}</h1>
+          <p className="journey-subtitle">
+            {currentJourney?.subtitle ?? 'Transaction ID: #VR-8924-A'}
+          </p>
+
+          <div className="journey-summary-strip">
+            <div className="journey-summary-chip">
+              <span>Recovery rate</span>
+              <strong>{recoveryRate.toFixed(0)}%</strong>
+              <small>Target: {targetRate.toFixed(0)}%</small>
+            </div>
+            <div className="journey-summary-chip">
+              <span>Total recovered</span>
+              <strong>Rs {formatCurrency(totalRecovered)}</strong>
+              <small>{totalPaymentsProcessed} processed</small>
+            </div>
+            <div className="journey-summary-chip">
+              <span>Active recoveries</span>
+              <strong>{payments.length}</strong>
+              <small>{selectedPaymentId ? `Selected: ${selectedPaymentId.slice(-6)}` : 'No selection yet'}</small>
+            </div>
+          </div>
         </section>
 
         <section className="timeline-stage" aria-label="Payment recovery timeline">
@@ -175,10 +225,7 @@ const DashboardPage: React.FC = () => {
             <motion.div
               key={segment.id}
               className={`timeline-line timeline-line-${segment.tone}`}
-              style={{
-                left: `${segment.left}%`,
-                width: `${segment.width}%`,
-              }}
+              style={{ left: `${segment.left}%`, width: `${segment.width}%` }}
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
               transition={{ duration: 0.5, delay: index * 0.1, ease: 'easeOut' }}
@@ -187,9 +234,9 @@ const DashboardPage: React.FC = () => {
           ))}
 
           {journeyNodes.map((node, index) => {
-            const isHovered = hoveredId === node.id;
             const isExpanded = expandedId === node.id;
             const connectorHeight = node.y === 'above' ? 72 : 76;
+            const icon = iconMap[node.id] ?? <Check size={16} />;
 
             return (
               <motion.div
@@ -220,7 +267,7 @@ const DashboardPage: React.FC = () => {
                     {node.preview && <div className="node-detail">{node.preview}</div>}
                     {node.amount && (
                       <div className={`node-amount ${node.id === 'complete' ? 'node-amount-gold' : ''}`}>
-                        {node.amount}
+                        Rs {formatCurrency(Number(String(node.amount).replace(/,/g, '')))}
                       </div>
                     )}
                     {node.reason && <div className="node-reason">{node.reason}</div>}
@@ -237,9 +284,7 @@ const DashboardPage: React.FC = () => {
                     )}
 
                     {node.id === 'analysis' && isExpanded && (
-                      <div className="node-reasoning">
-                        {node.reasoning}
-                      </div>
+                      <div className="node-reasoning">{node.reasoning}</div>
                     )}
 
                     {node.detail && hoveredId === node.id && (
@@ -261,8 +306,10 @@ const DashboardPage: React.FC = () => {
                   style={{ height: `${connectorHeight}px` }}
                   aria-hidden="true"
                 />
-                <div className={`node-circle node-circle-${node.circleTone} ${node.current ? 'node-circle-current' : ''}`}>
-                  {node.icon}
+                <div
+                  className={`node-circle node-circle-${node.circleTone} ${node.current ? 'node-circle-current' : ''}`}
+                >
+                  {icon}
                 </div>
               </motion.div>
             );
@@ -274,8 +321,12 @@ const DashboardPage: React.FC = () => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.35, delay: 0.7 }}
           >
-            <div className="timeline-outcome-label">Revenue Recovered</div>
-            <div className="timeline-outcome-amount">₹5,000</div>
+            <div className="timeline-outcome-label">
+              {currentJourney?.status === 'recovered' ? 'Revenue Recovered' : 'Recovery In Progress'}
+            </div>
+            <div className="timeline-outcome-amount">
+              Rs {formatCurrency(currentJourney?.recoveredAmount ?? totalRecovered)}
+            </div>
           </motion.div>
 
           {activeNode && (
@@ -289,6 +340,30 @@ const DashboardPage: React.FC = () => {
               <span>{activeNode.detail ?? activeNode.subtitle}</span>
             </motion.div>
           )}
+
+          {activityFeed.length > 0 && (
+            <div className="timeline-activity-rail">
+              {activityFeed.map((item) => (
+                <button
+                  type="button"
+                  key={item.paymentId}
+                  className="timeline-activity-chip"
+                  onClick={() => void selectPayment(item.paymentId)}
+                >
+                  <span className="timeline-activity-icon">{activityIconMap[item.icon] ?? <MessageSquareText size={16} />}</span>
+                  <span className="timeline-activity-copy">
+                    <strong>{item.label}</strong>
+                    <span>
+                      {item.action} {item.amount}
+                    </span>
+                  </span>
+                  <span className="timeline-activity-time">{item.time}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {error && <div className="timeline-error">{error}</div>}
         </section>
       </main>
 
