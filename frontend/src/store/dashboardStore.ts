@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import type {
-  ChargebackRisk,
   DashboardActivityItem,
   DashboardJourney,
   DashboardJourneyNode,
@@ -21,6 +20,19 @@ type DashboardOverviewApi = {
     strategy_used: string;
     recovered_amount: number;
     last_updated: string;
+    chargeback_risk?: {
+      risk_score_pct: number;
+      risk_band: string;
+      customer_history: string[];
+      product_category: string;
+      payment_method: string;
+      recovery_path: string;
+      evidence_to_store: string[];
+      recommended_actions: string[];
+      manual_review_required: boolean;
+      rationale: string[];
+      generated_at: string;
+    } | null;
   }>;
   activity_feed: Array<{
     label: string;
@@ -103,6 +115,21 @@ const mapPayment = (payment: DashboardOverviewApi['active_recoveries'][number]):
   strategyUsed: payment.strategy_used,
   recoveredAmount: payment.recovered_amount,
   lastUpdated: payment.last_updated,
+  chargebackRisk: payment.chargeback_risk
+    ? {
+        riskScorePct: payment.chargeback_risk.risk_score_pct,
+        riskBand: payment.chargeback_risk.risk_band,
+        customerHistory: payment.chargeback_risk.customer_history,
+        productCategory: payment.chargeback_risk.product_category,
+        paymentMethod: payment.chargeback_risk.payment_method,
+        recoveryPath: payment.chargeback_risk.recovery_path,
+        evidenceToStore: payment.chargeback_risk.evidence_to_store,
+        recommendedActions: payment.chargeback_risk.recommended_actions,
+        manualReviewRequired: payment.chargeback_risk.manual_review_required,
+        rationale: payment.chargeback_risk.rationale,
+        generatedAt: payment.chargeback_risk.generated_at,
+      }
+    : null,
 });
 
 const mapJourneyNode = (node: DashboardJourneyApi['nodes'][number]): DashboardJourneyNode => ({

@@ -147,6 +147,15 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
       tone: 'rose',
     },
   ];
+  const chargebackRows = tableRows
+    .filter((payment) => payment.chargebackRisk)
+    .sort((a, b) => (b.chargebackRisk?.riskScorePct ?? 0) - (a.chargebackRisk?.riskScorePct ?? 0));
+  const chargebackWatch = chargebackRows.filter((payment) => (payment.chargebackRisk?.riskScorePct ?? 0) > 40);
+  const topChargeback = chargebackRows[0] ?? null;
+  const averageChargebackRisk = chargebackRows.length
+    ? chargebackRows.reduce((sum, payment) => sum + (payment.chargebackRisk?.riskScorePct ?? 0), 0) / chargebackRows.length
+    : 0;
+  const manualReviewCount = chargebackRows.filter((payment) => payment.chargebackRisk?.manualReviewRequired).length;
 
   return (
     <div className="dashboard-page">
@@ -261,6 +270,82 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
                 ))}
               </section>
 
+              <section className="dashboard-risk-strip" aria-label="Chargeback exposure summary">
+                <div className="dashboard-risk-chip">
+                  <span>Recovered at risk</span>
+                  <strong>{chargebackRows.length}</strong>
+                </div>
+                <div className="dashboard-risk-chip">
+                  <span>Average risk</span>
+                  <strong>{averageChargebackRisk.toFixed(1)}%</strong>
+                </div>
+                <div className="dashboard-risk-chip">
+                  <span>Manual reviews</span>
+                  <strong>{manualReviewCount}</strong>
+                </div>
+              </section>
+
+              <section className="dashboard-watch-panel" aria-label="Chargeback watch">
+                <div className="dashboard-section-head dashboard-watch-head">
+                  <h2>Chargeback Watch</h2>
+                  <span>Recovered payments above the 40% threshold</span>
+                </div>
+
+                {!topChargeback ? (
+                  <div className="dashboard-watch-empty">
+                    No recovered payments are currently above the chargeback-risk threshold.
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="dashboard-watch-feature"
+                      onClick={() => openJourney(topChargeback.id)}
+                    >
+                      <div className="dashboard-watch-feature-copy">
+                        <div className="dashboard-watch-feature-topline">
+                          <span className="dashboard-watch-feature-badge">Highest risk</span>
+                          <span className="dashboard-watch-feature-score">
+                            {topChargeback.chargebackRisk?.riskScorePct.toFixed(1)}%
+                          </span>
+                        </div>
+                        <strong>#{topChargeback.id}</strong>
+                        <p>
+                          {topChargeback.chargebackRisk?.recommendedActions[0] ??
+                            'Store extra evidence and keep the invoice ready for review.'}
+                        </p>
+                      </div>
+                      <div className="dashboard-watch-feature-meta">
+                        <span>{topChargeback.chargebackRisk?.riskBand ?? 'unknown'}</span>
+                        <strong>{topChargeback.chargebackRisk?.recoveryPath ?? topChargeback.strategyUsed.replace(/_/g, ' ')}</strong>
+                      </div>
+                    </button>
+
+                    {chargebackWatch.length > 0 && (
+                      <div className="dashboard-watch-list">
+                        {chargebackWatch.slice(0, 2).map((payment) => (
+                          <button
+                            key={payment.id}
+                            type="button"
+                            className="dashboard-watch-card"
+                            onClick={() => openJourney(payment.id)}
+                          >
+                            <div className="dashboard-watch-copy">
+                              <strong>#{payment.id}</strong>
+                              <span>{payment.chargebackRisk?.recoveryPath ?? payment.strategyUsed.replace(/_/g, ' ')}</span>
+                            </div>
+                            <div className="dashboard-watch-risk">
+                              <em>{payment.chargebackRisk?.riskBand ?? 'unknown'}</em>
+                              <strong>{payment.chargebackRisk?.riskScorePct.toFixed(1) ?? '0.0'}%</strong>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </section>
+
               <section className="dashboard-table-panel">
                 <div className="dashboard-section-head">
                   <h2>Active Recoveries</h2>
@@ -277,6 +362,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
                         <th>Status</th>
                         <th>Strategy</th>
                         <th>Money Recovered</th>
+                        <th>Chargeback Risk</th>
                         <th>Last Updated</th>
                       </tr>
                     </thead>
@@ -299,6 +385,15 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
                           </td>
                           <td>{payment.strategyUsed.replace(/_/g, ' ')}</td>
                           <td>Rs {formatCurrency(payment.recoveredAmount)}</td>
+                          <td>
+                            {payment.chargebackRisk ? (
+                              <span className={`dashboard-risk-badge dashboard-risk-${payment.chargebackRisk.riskBand}`}>
+                                {payment.chargebackRisk.riskScorePct.toFixed(1)}%
+                              </span>
+                            ) : (
+                              <span className="dashboard-risk-badge dashboard-risk-none">None</span>
+                            )}
+                          </td>
                           <td>{payment.lastUpdated ?? 'Just now'}</td>
                         </motion.tr>
                       ))}

@@ -7,6 +7,7 @@ export interface Payment {
   strategyUsed: string;
   recoveredAmount: number;
   lastUpdated?: string;
+  chargebackRisk?: ChargebackRisk | null;
 }
 
 export interface DashboardActivityItem {

@@ -22,6 +22,7 @@ class DashboardPaymentItem(BaseModel):
     strategy_used: str
     recovered_amount: float
     last_updated: datetime
+    chargeback_risk: Optional[ChargebackRiskAssessment] = None
 
 
 class DashboardActivityItem(BaseModel):

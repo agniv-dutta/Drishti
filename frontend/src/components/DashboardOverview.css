@@ -348,6 +348,204 @@
   font-size: 14px;
 }
 
+.dashboard-watch-panel {
+  margin-top: 22px;
+  padding: 22px;
+  border-radius: 16px;
+  background: #2a2727;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.18);
+}
+
+.dashboard-risk-strip {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dashboard-risk-chip {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-risk-chip span {
+  display: block;
+  color: rgba(247, 240, 234, 0.56);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-risk-chip strong {
+  display: block;
+  margin-top: 8px;
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 24px;
+  letter-spacing: -0.03em;
+}
+
+.dashboard-watch-head {
+  margin-bottom: 0;
+}
+
+.dashboard-watch-head span {
+  color: rgba(247, 240, 234, 0.56);
+  font-size: 13px;
+}
+
+.dashboard-watch-empty {
+  margin-top: 14px;
+  color: rgba(247, 240, 234, 0.7);
+  font-size: 14px;
+}
+
+.dashboard-watch-list {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dashboard-watch-feature {
+  margin-top: 14px;
+  width: 100%;
+  padding: 18px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 116, 90, 0.18), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 116, 90, 0.32);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.16);
+}
+
+.dashboard-watch-feature-copy {
+  min-width: 0;
+}
+
+.dashboard-watch-feature-topline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dashboard-watch-feature-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #ff745a;
+  color: #24103f;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-watch-feature-score {
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 32px;
+  letter-spacing: -0.04em;
+}
+
+.dashboard-watch-feature-copy strong {
+  display: block;
+  margin-top: 10px;
+  color: #ffffff;
+  font-family: var(--font-heading);
+  font-size: 34px;
+  letter-spacing: -0.04em;
+}
+
+.dashboard-watch-feature-copy p {
+  margin-top: 10px;
+  color: rgba(247, 240, 234, 0.78);
+  font-size: 14px;
+  line-height: 1.55;
+  max-width: 520px;
+}
+
+.dashboard-watch-feature-meta {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.dashboard-watch-feature-meta span {
+  display: block;
+  color: #ffab9a;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-watch-feature-meta strong {
+  display: block;
+  margin-top: 6px;
+  color: #f7f0ea;
+  font-size: 16px;
+}
+
+.dashboard-watch-card {
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.dashboard-watch-copy strong {
+  display: block;
+  color: #ffffff;
+  font-size: 15px;
+}
+
+.dashboard-watch-copy span {
+  display: block;
+  margin-top: 4px;
+  color: rgba(247, 240, 234, 0.62);
+  font-size: 13px;
+}
+
+.dashboard-watch-risk {
+  text-align: right;
+}
+
+.dashboard-watch-risk em {
+  display: block;
+  color: #ffab9a;
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-watch-risk strong {
+  display: block;
+  margin-top: 6px;
+  color: #ff745a;
+  font-family: var(--font-heading);
+  font-size: 24px;
+  line-height: 1;
+}
+
 .dashboard-subgrid {
   margin-top: 34px;
   display: grid;
@@ -531,6 +729,44 @@
   color: rgba(247, 240, 234, 0.82);
 }
 
+.dashboard-risk-badge {
+  display: inline-flex;
+  align-items: center;
+  min-width: 76px;
+  justify-content: center;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dashboard-risk-none {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(247, 240, 234, 0.7);
+}
+
+.dashboard-risk-low {
+  background: rgba(155, 139, 125, 0.16);
+  color: #f0d9c7;
+}
+
+.dashboard-risk-medium {
+  background: rgba(212, 165, 116, 0.16);
+  color: #f7d4ad;
+}
+
+.dashboard-risk-high {
+  background: rgba(255, 116, 90, 0.18);
+  color: #ffb5a5;
+}
+
+.dashboard-risk-critical {
+  background: rgba(214, 74, 99, 0.18);
+  color: #ffc2cd;
+}
+
 .dashboard-feed-panel {
   background: #f6f1e9;
   color: #2a2540;
@@ -665,8 +901,24 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .dashboard-risk-strip {
+    grid-template-columns: 1fr;
+  }
+
   .dashboard-subgrid {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-watch-list {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-watch-feature {
+    flex-direction: column;
+  }
+
+  .dashboard-watch-feature-meta {
+    text-align: left;
   }
 }
 
@@ -699,6 +951,26 @@
     width: 100%;
   }
 
+  .dashboard-risk-chip strong {
+    font-size: 20px;
+  }
+
+  .dashboard-watch-feature {
+    padding: 16px;
+  }
+
+  .dashboard-watch-feature-score {
+    font-size: 26px;
+  }
+
+  .dashboard-watch-feature-copy strong {
+    font-size: 28px;
+  }
+
+  .dashboard-watch-feature-meta strong {
+    font-size: 14px;
+  }
+
   .dashboard-table {
     min-width: 760px;
   }
@@ -707,11 +979,27 @@
     padding: 20px 16px;
   }
 
+  .dashboard-watch-feature {
+    flex-direction: column;
+  }
+
+  .dashboard-watch-feature-meta {
+    text-align: left;
+  }
+
   .dashboard-mini-row,
   .dashboard-feed-inline,
   .dashboard-audit-row,
   .dashboard-settings-row {
     grid-template-columns: 1fr;
     justify-items: start;
+  }
+
+  .dashboard-watch-card {
+    flex-direction: column;
+  }
+
+  .dashboard-watch-risk {
+    text-align: left;
   }
 }

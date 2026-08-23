@@ -189,29 +189,38 @@ class ExecutorAgent(BaseAgent):
     async def _do_email(
         self, txn: PaymentTransaction, step: RecoveryStep
     ) -> Tuple[str, Optional[str], int]:
-        content = build_recovery_email(txn.customer.name, format_inr(txn.amount_inr))
+        from app.i18n.messages import detect_language, render_email
+
+        language = detect_language(txn.meta)
+        content = render_email(language, txn.customer.name, format_inr(txn.amount_inr))
         result = await get_email_provider().send(txn.customer.email, content)
         if not result.success:
             raise RuntimeError(result.detail or "email send failed")
-        return f"email delivered ({content.subject})", result.reference, 0
+        return f"email delivered ({content.subject} [{language.value}])", result.reference, 0
 
     async def _do_sms(
         self, txn: PaymentTransaction, step: RecoveryStep
     ) -> Tuple[str, Optional[str], int]:
-        message = build_recovery_sms(txn.customer.name, format_inr(txn.amount_inr))
+        from app.i18n.messages import detect_language, generate_sms_via_llm, render_sms
+
+        language = detect_language(txn.meta)
+        message = render_sms(language, txn.customer.name, format_inr(txn.amount_inr))
         result = await get_sms_provider().send(txn.customer.phone, message)
         if not result.success:
             raise RuntimeError(result.detail or "sms send failed")
-        return "sms delivered", result.reference, 0
+        return f"sms delivered [{language.value}]", result.reference, 0
 
     async def _do_voice(
         self, txn: PaymentTransaction, step: RecoveryStep
     ) -> Tuple[str, Optional[str], int]:
-        script = build_hinglish_script(txn.customer.name, format_inr(txn.amount_inr))
-        result = await get_voice_provider().place_call(txn.customer.phone, script)
+        from app.i18n.messages import detect_language, render_voice_script
+
+        language = detect_language(txn.meta)
+        script = render_voice_script(language, txn.customer.name, format_inr(txn.amount_inr))
+        result = await get_voice_provider().place_call(txn.customer.phone, script.as_text())
         if not result.success:
             raise RuntimeError(result.detail or "ivr call failed")
-        return "ivr call placed (hinglish script)", result.reference, 0
+        return f"ivr call placed ({script.language.value} script)", result.reference, 0
 
     async def _do_crm(
         self, txn: PaymentTransaction, step: RecoveryStep

@@ -101,6 +101,9 @@ def _build_payment_item(payment: PaymentRecord, recovery: Optional[RecoveryRecor
     strategy_used = recovery.strategy if recovery else "smart_retry"
     recovered_amount = _rupees(recovery.recovered_amount_paise if recovery else 0)
     last_updated = recovery.updated_at if recovery else payment.updated_at
+    chargeback_risk = None
+    if recovery and recovery.result_json and recovery.result_json.get("chargeback_risk"):
+        chargeback_risk = ChargebackRiskAssessment(**recovery.result_json["chargeback_risk"])
     return DashboardPaymentItem(
         id=payment.id,
         amount=_rupees(payment.amount_paise),
@@ -108,6 +111,7 @@ def _build_payment_item(payment: PaymentRecord, recovery: Optional[RecoveryRecor
         strategy_used=strategy_used,
         recovered_amount=recovered_amount,
         last_updated=last_updated,
+        chargeback_risk=chargeback_risk,
     )
 
 
