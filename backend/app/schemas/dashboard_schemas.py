@@ -7,6 +7,7 @@ from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
+from app.models.chargeback import ChargebackRiskAssessment
 
 DashboardStatus = Literal["failed", "recovered", "escalated"]
 NodeTone = Literal["coral", "rose", "gold"]
@@ -60,6 +61,7 @@ class DashboardJourneyResponse(BaseModel):
     status: str
     recovered_amount: float
     nodes: List[DashboardJourneyNode] = Field(default_factory=list)
+    chargeback_risk: Optional[ChargebackRiskAssessment] = None
     generated_at: datetime
 
 

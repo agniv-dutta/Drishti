@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type {
+  ChargebackRisk,
   DashboardActivityItem,
   DashboardJourney,
   DashboardJourneyNode,
@@ -59,6 +60,19 @@ type DashboardJourneyApi = {
     status?: string;
     reason?: string;
   }>;
+  chargeback_risk?: {
+    risk_score_pct: number;
+    risk_band: string;
+    customer_history: string[];
+    product_category: string;
+    payment_method: string;
+    recovery_path: string;
+    evidence_to_store: string[];
+    recommended_actions: string[];
+    manual_review_required: boolean;
+    rationale: string[];
+    generated_at: string;
+  } | null;
   generated_at: string;
 };
 
@@ -120,6 +134,21 @@ const mapJourney = (journey: DashboardJourneyApi): DashboardJourney => ({
   status: journey.status,
   recoveredAmount: journey.recovered_amount,
   nodes: journey.nodes.map(mapJourneyNode),
+  chargebackRisk: journey.chargeback_risk
+    ? {
+        riskScorePct: journey.chargeback_risk.risk_score_pct,
+        riskBand: journey.chargeback_risk.risk_band,
+        customerHistory: journey.chargeback_risk.customer_history,
+        productCategory: journey.chargeback_risk.product_category,
+        paymentMethod: journey.chargeback_risk.payment_method,
+        recoveryPath: journey.chargeback_risk.recovery_path,
+        evidenceToStore: journey.chargeback_risk.evidence_to_store,
+        recommendedActions: journey.chargeback_risk.recommended_actions,
+        manualReviewRequired: journey.chargeback_risk.manual_review_required,
+        rationale: journey.chargeback_risk.rationale,
+        generatedAt: journey.chargeback_risk.generated_at,
+      }
+    : null,
   generatedAt: journey.generated_at,
 });
 

@@ -36,6 +36,22 @@ async def metrics_summary(
     return collector.collect(db, period_days)
 
 
+@router.get("/learning/weekly")
+async def learning_weekly(
+    days: int = Query(default=7, ge=1, le=90),
+    min_samples: int = Query(default=5, ge=1, le=100),
+    db: Session = Depends(get_db),
+) -> Dict[str, Any]:
+    """Strategy success rankings per failure_reason / segment / region / time_of_day."""
+    from app.ml.feedback import get_feedback_loop
+
+    aggregates = get_feedback_loop().weekly_aggregates(db, days=days, min_samples=min_samples)
+    return {
+        "aggregates": aggregates,
+        "learning_prompt": get_feedback_loop().format_learning_prompt(aggregates),
+    }
+
+
 @router.get("/prometheus", include_in_schema=False)
 async def prometheus_metrics(
     period_days: int = Query(default=30, ge=1, le=365),

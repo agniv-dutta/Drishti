@@ -257,6 +257,39 @@ class AuditRecord(Base):
 
 
 # ---------------------------------------------------------------------------
+# Feedback loop (agent learning from what worked)
+# ---------------------------------------------------------------------------
+
+class LearningEventRecord(Base):
+    __tablename__ = "learning_events"
+    __table_args__ = (
+        Index("ix_learning_events_created_at", "created_at"),
+        Index("ix_learning_events_reason_strategy", "failure_reason", "strategy"),
+    )
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    payment_id: Mapped[str] = mapped_column(String(32), index=True)
+    recovery_id: Mapped[str] = mapped_column(String(32), index=True)
+
+    strategy: Mapped[str] = mapped_column(String(40))          # smart_retry | nudge_digital | ...
+    channel: Mapped[str] = mapped_column(String(32))           # winning/primary channel
+    customer_response: Mapped[str] = mapped_column(String(20), index=True)  # success|no_response|opted_out|complained
+
+    time_to_recovery_seconds: Mapped[int] = mapped_column(Integer, default=0)
+    amount_paise: Mapped[int] = mapped_column(BigInteger, default=0)
+    recovered_paise: Mapped[int] = mapped_column(BigInteger, default=0)
+    happiness_score: Mapped[float] = mapped_column(Float, default=0.5)
+
+    # segmentation dimensions for weekly aggregation
+    failure_reason: Mapped[str] = mapped_column(String(40), index=True)
+    customer_segment: Mapped[str] = mapped_column(String(24), default="new")
+    region: Mapped[str] = mapped_column(String(24), default="unknown")
+    time_of_day: Mapped[str] = mapped_column(String(16), default="unknown")
+
+
+# ---------------------------------------------------------------------------
 # Verity revenue recovery schema
 # ---------------------------------------------------------------------------
 

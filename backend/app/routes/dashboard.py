@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.core.security import require_api_key
 from app.database.models import PaymentRecord, RecoveryRecord
 from app.database.session import get_db
+from app.models.chargeback import ChargebackRiskAssessment
 from app.models.recovery import RecoveryStatus
 from app.schemas.dashboard_schemas import (
     DashboardActivityItem,
@@ -304,5 +305,10 @@ async def get_journey(
         status=_status_label(recovery.status if recovery else RecoveryStatus.FAILED.value),
         recovered_amount=recovered_amount,
         nodes=_build_journey_nodes(payment, recovery),
+        chargeback_risk=(
+            ChargebackRiskAssessment(**(recovery.result_json.get("chargeback_risk") or {}))
+            if recovery and recovery.result_json and recovery.result_json.get("chargeback_risk")
+            else None
+        ),
         generated_at=datetime.now(timezone.utc),
     )

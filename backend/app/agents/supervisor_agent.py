@@ -347,6 +347,31 @@ class SupervisorAgent(BaseAgent):
             max_attempts=get_settings().max_recovery_attempts,
         )
 
+    def _log_learning_event(
+        self,
+        recovery: RecoveryRecord,
+        plan: RecoveryPlan,
+        result: ExecutionResult,
+        payment: PaymentRecord,
+    ) -> None:
+        """Feed the outcome back into the learning loop (best-effort)."""
+        try:
+            from app.ml.feedback import get_feedback_loop
+
+            get_feedback_loop().log_attempt(
+                self.db,
+                recovery_id=recovery.id,
+                plan=plan,
+                result=result,
+                payment_id=payment.id,
+                amount_paise=payment.amount_paise,
+                failure_reason=payment.failure_reason,
+                meta=payment.meta or {},
+                payment_created_at=payment.created_at,
+            )
+        except Exception as exc:  # noqa: BLE001 - learning must never break execution
+            logger.warning("learning.log_attempt_failed", error=str(exc))
+
     # ------------------------------------------------------------------
     # execute
     # ------------------------------------------------------------------
@@ -392,6 +417,7 @@ class SupervisorAgent(BaseAgent):
             recovery.status = RecoveryStatus.PLANNED.value
         else:
             recovery.apply_result(result)
+            self._log_learning_event(recovery, plan, result, payment)
         db.add(recovery)
         db.flush()
 

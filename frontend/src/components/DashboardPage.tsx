@@ -6,6 +6,7 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  FileText,
   MessageSquareText,
   Mail,
   PartyPopper,
@@ -142,6 +143,7 @@ const DashboardPage: React.FC<{ paymentId?: string | null }> = ({ paymentId }) =
 
   const journeyNodes = journey?.nodes.length ? journey.nodes : fallbackNodes;
   const currentJourney = journey ?? null;
+  const chargebackRisk = currentJourney?.chargebackRisk ?? null;
   const activeNode = useMemo(
     () => journeyNodes.find((node) => node.id === hoveredId) ?? null,
     [hoveredId, journeyNodes],
@@ -173,19 +175,19 @@ const DashboardPage: React.FC<{ paymentId?: string | null }> = ({ paymentId }) =
         </a>
 
         <nav className="journey-nav" aria-label="Primary">
-          <a href="#/dashboard">Dashboard</a>
-          <a href="#/dashboard" className="active">
+          <a href="#/dashboard/overview">Dashboard</a>
+          <a href="#/dashboard/overview" className="active">
             Recovery Journey
           </a>
-          <a href="#">Integrations</a>
-          <a href="#">Company</a>
+          <a href="#/page/integrations">Integrations</a>
+          <a href="#/page/company">Company</a>
         </nav>
 
         <div className="journey-header-actions">
-          <a href="#" className="journey-link-button">
+          <a href="#/page/client-login" className="journey-link-button">
             Client Login
           </a>
-          <a href="#" className="journey-primary-button">
+          <a href="#/page/get-started" className="journey-primary-button">
             Get Started
           </a>
         </div>
@@ -217,6 +219,67 @@ const DashboardPage: React.FC<{ paymentId?: string | null }> = ({ paymentId }) =
             </div>
           </div>
         </section>
+
+        {chargebackRisk && (
+          <section className={`chargeback-panel chargeback-panel-${chargebackRisk.riskBand}`}>
+            <div className="chargeback-panel-head">
+              <div>
+                <p className="chargeback-kicker">Chargeback prevention</p>
+                <h2>Predicted future chargeback risk</h2>
+              </div>
+              <div className="chargeback-score">
+                <span>{chargebackRisk.riskScorePct.toFixed(1)}%</span>
+                <small>{chargebackRisk.riskBand}</small>
+              </div>
+            </div>
+
+            <div className="chargeback-grid">
+              <div className="chargeback-item">
+                <span>Customer history</span>
+                <strong>{chargebackRisk.customerHistory.length ? chargebackRisk.customerHistory.join(' · ') : 'No prior risk flags'}</strong>
+              </div>
+              <div className="chargeback-item">
+                <span>Product category</span>
+                <strong>{chargebackRisk.productCategory}</strong>
+              </div>
+              <div className="chargeback-item">
+                <span>Payment method</span>
+                <strong>{chargebackRisk.paymentMethod}</strong>
+              </div>
+              <div className="chargeback-item">
+                <span>Recovery path</span>
+                <strong>{chargebackRisk.recoveryPath}</strong>
+              </div>
+            </div>
+
+            <div className="chargeback-section">
+              <h3>Recommended prevention actions</h3>
+              <div className="chargeback-pills">
+                {chargebackRisk.recommendedActions.map((action) => (
+                  <span key={action}>{action}</span>
+                ))}
+              </div>
+            </div>
+
+            <div className="chargeback-section">
+              <h3>Evidence to store</h3>
+              <div className="chargeback-evidence">
+                {chargebackRisk.evidenceToStore.map((item) => (
+                  <span key={item}>
+                    <FileText size={14} />
+                    {item.replace(/_/g, ' ')}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {chargebackRisk.manualReviewRequired && (
+              <div className="chargeback-flag">
+                Flag for manual review. The merchant team should monitor this payment closely.
+              </div>
+            )}
+          </section>
+        )}
 
         <section className="timeline-stage" aria-label="Payment recovery timeline">
           <div className="timeline-line timeline-line-base" aria-hidden="true" />

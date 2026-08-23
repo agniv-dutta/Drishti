@@ -18,6 +18,7 @@ from app.integrations.email_provider import build_recovery_email, get_email_prov
 from app.integrations.razorpay_client import get_razorpay_client
 from app.integrations.sms_provider import build_recovery_sms, get_sms_provider
 from app.integrations.voice_provider import build_hinglish_script, get_voice_provider
+from app.ml.chargeback_risk import predict_chargeback_risk
 from app.models.audit import AuditEventType, AuditSeverity
 from app.models.payment import PaymentTransaction
 from app.models.recovery import (
@@ -77,6 +78,13 @@ class ExecutorAgent(BaseAgent):
         )
         result.completed_at = datetime.now(timezone.utc)
 
+        chargeback_risk = None
+        if success:
+            chargeback_risk = predict_chargeback_risk(txn, plan.strategy, outcomes)
+            if chargeback_risk is not None:
+                result.chargeback_risk = chargeback_risk
+                result.summary = f"{result.summary} Chargeback risk {chargeback_risk.risk_score_pct:.1f}%."
+
         self.audit(
             AuditEventType.RECOVERY_EXECUTED,
             resource_type="recovery",
@@ -91,6 +99,7 @@ class ExecutorAgent(BaseAgent):
                 "recovered_paise": recovered,
                 "latency_ms": round((time.perf_counter() - started) * 1000, 1),
                 "dry_run": dry_run,
+                "chargeback_risk": chargeback_risk.model_dump(mode="json") if chargeback_risk else None,
             },
         )
         return result

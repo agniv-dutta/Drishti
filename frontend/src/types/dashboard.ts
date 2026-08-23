@@ -42,6 +42,20 @@ export interface DashboardJourneyNode {
   reason?: string;
 }
 
+export interface ChargebackRisk {
+  riskScorePct: number;
+  riskBand: string;
+  customerHistory: string[];
+  productCategory: string;
+  paymentMethod: string;
+  recoveryPath: string;
+  evidenceToStore: string[];
+  recommendedActions: string[];
+  manualReviewRequired: boolean;
+  rationale: string[];
+  generatedAt: string;
+}
+
 export interface DashboardJourney {
   paymentId: string;
   transactionId: string;
@@ -51,6 +65,7 @@ export interface DashboardJourney {
   status: string;
   recoveredAmount: number;
   nodes: DashboardJourneyNode[];
+  chargebackRisk?: ChargebackRisk | null;
   generatedAt: string;
 }
 

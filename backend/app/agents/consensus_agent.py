@@ -98,6 +98,7 @@ class PersonaRecoverer(BaseAgent):
     """Base for the three consensus personas."""
 
     system_prompt: str = ""
+    learned_context: str = ""  # weekly learning block injected by ConsensusAgent
     default_strategy: RecoveryStrategy = RecoveryStrategy.NUDGE_DIGITAL
     default_channels: List[RecoveryChannel] = [RecoveryChannel.SMS]
     default_first_delay_minutes: int = 0
@@ -120,7 +121,10 @@ class PersonaRecoverer(BaseAgent):
     # -- LLM path ------------------------------------------------------
     def _llm_recommend(self, txn: PaymentTransaction, analysis: FailureAnalysis) -> Optional[AgentRecommendation]:
         prompt = CONSENSUS_SYSTEM_PROMPT.format(payment_json=_paise_payment_json(txn, analysis))
-        text = self.llm_complete(self.system_prompt, prompt)
+        system = self.system_prompt
+        if self.learned_context:
+            system = f"{system}\n\nLearned insights from recent recovery outcomes:\n{self.learned_context}"
+        text = self.llm_complete(system, prompt)
         payload = self.extract_json(text)
         if not payload:
             return None
@@ -269,6 +273,15 @@ class ConsensusAgent(BaseAgent):
     async def run(self, txn: PaymentTransaction, analysis: FailureAnalysis) -> ConsensusDecision:
         started = time.perf_counter()
         settings = get_settings()
+
+        try:
+            from app.ml.feedback import build_learned_context
+
+            learned = await build_learned_context()
+        except Exception:  # noqa: BLE001 - learning context is optional garnish
+            learned = ""
+        for persona in self.personas:
+            persona.learned_context = learned
 
         recommendations: List[AgentRecommendation] = await asyncio.gather(
             *(persona.recommend(txn, analysis) for persona in self.personas)

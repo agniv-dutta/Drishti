@@ -78,9 +78,21 @@ class StrategistAgent(BaseAgent):
                 "escalate": RecoveryStrategy.CRM_HUMAN_ESCALATION,
             }.get(prediction["recommended_strategy"], strategy)
 
+        # Feedback loop: weekly outcome data can overrule heuristics/ML when a
+        # strategy clearly outperforms for this failure reason (no retraining).
+        learning_note = ""
+        if override_strategy is None:
+            learned, learning_note = await self._learned_strategy_override(txn, strategy)
+            if learned is not None:
+                strategy = learned
+
         steps = self._build_steps(strategy, analysis, ranked, txn.amount_inr, settings.high_value_threshold_inr)
         total_cost = sum(step.estimated_cost_paise for step in steps)
         expected_success = self._expected_success(strategy, analysis, ranked)
+
+        rationale = self._rationale(strategy, analysis, ranked)
+        if learning_note:
+            rationale = f"{rationale} Feedback loop: {learning_note}"
 
         plan = RecoveryPlan(
             plan_id=uuid.uuid4().hex,
@@ -89,7 +101,7 @@ class StrategistAgent(BaseAgent):
             steps=steps,
             expected_success_probability=expected_success,
             total_estimated_cost_paise=total_cost,
-            rationale=self._rationale(strategy, analysis, ranked),
+            rationale=rationale,
             created_by=self.name,
         )
 
@@ -103,10 +115,54 @@ class StrategistAgent(BaseAgent):
                 "step_count": len(steps),
                 "estimated_cost_paise": total_cost,
                 "expected_success_probability": expected_success,
+                "learning_applied": learning_note or None,
                 "latency_ms": round((time.perf_counter() - started) * 1000, 1),
             },
         )
         return plan
+
+    async def _learned_strategy_override(
+        self,
+        txn: PaymentTransaction,
+        current: RecoveryStrategy,
+    ) -> Tuple[Optional[RecoveryStrategy], str]:
+        """Switch strategy when weekly outcome data strongly favours another one."""
+        try:
+            from app.ml.feedback import TACTIC_LABELS, get_learning_snapshot
+
+            snapshot = await get_learning_snapshot()
+            reason = txn.failure_reason.value if txn.failure_reason else "unknown"
+            info = (snapshot or {}).get("by_failure_reason", {}).get(reason)
+            if not info:
+                return None, ""
+
+            ranking = [r for r in info.get("ranking", []) if r["tactic"] != "write_off"]
+            if not ranking:
+                return None, ""
+
+            tactic_to_strategy = {
+                tactic: strat
+                for strat, tactic in TACTIC_LABELS.items()
+                if tactic != "write_off"
+            }
+            best = ranking[0]
+            current_tactic = TACTIC_LABELS.get(current.value, current.value)
+            current_stats = next(
+                (r for r in ranking if r["tactic"] == current_tactic), None
+            )
+            margin = best["success_rate"] - (current_stats["success_rate"] if current_stats else 0.0)
+            if best["attempts"] >= 10 and best["success_rate"] >= 0.6 and margin >= 0.1:
+                target = tactic_to_strategy.get(best["tactic"])
+                if target is not None and target != current:
+                    note = (
+                        f"{reason}: {best['tactic']} wins at "
+                        f"{round(best['success_rate'] * 100)}% success over "
+                        f"{best['attempts']} attempts - overriding heuristic choice."
+                    )
+                    return target, note
+        except Exception as exc:  # noqa: BLE001 - never break planning on learning errors
+            self.log.warning("learning.override_failed", error=str(exc))
+        return None, ""
 
     async def run_from_consensus(
         self,

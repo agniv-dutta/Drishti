@@ -66,7 +66,7 @@ const LandingPage: React.FC = () => {
   const [ctaIntent, setCtaIntent] = useState<'demo' | null>(null);
 
   const goToDashboard = () => {
-    window.location.hash = '#/dashboard';
+    window.location.hash = '#/dashboard/overview';
   };
 
   const handleCtaContinue = () => {
