@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
-import { Activity, RefreshCw, MessageSquare, PhoneCall, Tag, FileText, ClipboardList, ArrowRight, Building2 } from 'lucide-react';
+import { Activity, RefreshCw, MessageSquare, PhoneCall, Tag, FileText, ClipboardList, ArrowRight, Building2, X } from 'lucide-react';
 import './LandingPage.css';
 
 const LandingPage: React.FC = () => {
@@ -56,6 +56,8 @@ const LandingPage: React.FC = () => {
   ];
 
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [email, setEmail] = useState('');
+  const [ctaIntent, setCtaIntent] = useState<'trial' | 'demo' | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -63,6 +65,15 @@ const LandingPage: React.FC = () => {
     }, 5000);
     return () => clearInterval(timer);
   }, [testimonials.length]);
+
+  const openCtaModal = (intent: 'trial' | 'demo') => {
+    setCtaIntent(intent);
+  };
+
+  const handleCtaSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setCtaIntent('trial');
+  };
 
   return (
     <div className="page-wrapper">
@@ -361,6 +372,82 @@ const LandingPage: React.FC = () => {
 
         </div>
       </section>
+
+      {/* Final CTA Section */}
+      <section className="final-cta-section" aria-labelledby="final-cta-title">
+        <motion.div
+          className="final-cta-panel"
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-120px" }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="final-cta-badge">Built for recovery-led growth</div>
+          <h2 id="final-cta-title" className="final-cta-title">Ready to Stop Losing Revenue?</h2>
+          <p className="final-cta-subtitle">Join merchants recovering ₹250Cr+ with Verity</p>
+
+          <div className="final-cta-actions" role="group" aria-label="Primary actions">
+            <button
+              type="button"
+              className="final-cta-primary"
+              onClick={() => openCtaModal('trial')}
+            >
+              Start Your Free Trial
+            </button>
+            <button
+              type="button"
+              className="final-cta-secondary"
+              onClick={() => openCtaModal('demo')}
+            >
+              Schedule Demo
+            </button>
+          </div>
+
+          <form className="final-cta-form" onSubmit={handleCtaSubmit}>
+            <label className="sr-only" htmlFor="cta-email">Email address</label>
+            <input
+              id="cta-email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@company.com"
+              aria-label="Email address"
+            />
+            <button type="submit" className="final-cta-form-submit">
+              Continue
+            </button>
+          </form>
+        </motion.div>
+      </section>
+
+      {ctaIntent && (
+        <div className="cta-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="cta-modal-title">
+          <motion.div
+            className="cta-modal"
+            initial={{ opacity: 0, scale: 0.96, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+          >
+            <button className="cta-modal-close" type="button" onClick={() => setCtaIntent(null)} aria-label="Close dialog">
+              <X size={18} />
+            </button>
+            <p className="cta-modal-kicker">Next step</p>
+            <h3 id="cta-modal-title">
+              {ctaIntent === 'trial' ? 'Start your free trial' : 'Schedule your demo'}
+            </h3>
+            <p className="cta-modal-copy">
+              {email
+                ? `We’ll follow up with ${email} and get you into the right flow.`
+                : 'Add your email above and we’ll route you to the right onboarding flow.'}
+            </p>
+            <div className="cta-modal-actions">
+              <button type="button" className="cta-modal-primary" onClick={() => setCtaIntent(null)}>
+                Continue
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
