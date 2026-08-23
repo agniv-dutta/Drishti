@@ -33,7 +33,10 @@ class VoiceEmotionAnalyzer:
         negative = sum(word in text for word in self._negative)
         positive = sum(word in text for word in self._positive)
         hesitant = sum(word in text for word in self._hesitant)
-        sentiment = max(-1.0, min(1.0, (positive - negative) * 0.3 - hesitant * 0.1))
+        # Hesitation is uncertainty, not negativity: cap its pull so a
+        # keyword-rich but non-angry transcript still lands in the
+        # reassurance band instead of drifting into neutral/angry.
+        sentiment = max(-1.0, min(1.0, (positive - negative) * 0.3 - min(hesitant, 2) * 0.1))
         if negative and sentiment >= -0.5:
             sentiment = -0.6
         if positive and sentiment <= 0.5:

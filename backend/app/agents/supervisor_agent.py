@@ -7,7 +7,7 @@ guarantees every stage is auditable in both the JSONL trail and the DB.
 
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy import select
@@ -49,6 +49,11 @@ from app.utils.encryption import encrypt_dict
 from app.utils.formatters import paise_to_rupees, rupees_to_paise
 
 logger = get_logger("drishti.agent.supervisor")
+
+
+def _as_utc(value: datetime) -> datetime:
+    """SQLite may hand back naive datetimes; normalize before comparison."""
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
 ACTIVE_RECOVERY_STATUSES = [
     RecoveryStatus.PENDING.value,
@@ -526,7 +531,7 @@ class SupervisorAgent(BaseAgent):
                 consent is not None
                 and consent.status == "declined"
                 and consent.deferred_until is not None
-                and utcnow() < consent.deferred_until
+                and utcnow() < _as_utc(consent.deferred_until)
             ):
                 raise SupervisorError(
                     f"customer declined help - deferred until {consent.deferred_until.isoformat()}"

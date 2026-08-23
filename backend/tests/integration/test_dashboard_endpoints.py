@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 
-def test_dashboard_overview_and_journey(client, sample_failed_payment):
+def test_dashboard_overview_and_journey(client, sample_failed_payment, auto_confidence):
     ingest = client.post("/api/v1/payment/ingest", json=sample_failed_payment)
     assert ingest.status_code == 200, ingest.text
     payment_id = ingest.json()["payment_id"]

@@ -1,7 +1,7 @@
 """Integration tests for the API-backed agent orchestration flow."""
 
 
-def test_agent_analyze_plan_execute_flow(client, sample_failed_payment):
+def test_agent_analyze_plan_execute_flow(client, sample_failed_payment, auto_confidence):
     ingest = client.post("/api/v1/payment/ingest", json=sample_failed_payment)
     assert ingest.status_code == 200
     payment_id = ingest.json()["payment_id"]

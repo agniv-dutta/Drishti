@@ -55,6 +55,12 @@ def create_triage_ticket(
         return existing
 
     strategy = plan.strategy.value if hasattr(plan.strategy, "value") else str(plan.strategy)
+    history = customer_profile(db, payment)
+    # Per-payment priority (the decision's score is just the routing hint):
+    # high-value first, new customers second.
+    amount_component = min((payment.amount_paise / 100) / 100_000.0, 10.0) * 10.0
+    priority = amount_component + (0.0 if history["is_new_customer"] else 5.0)
+
     ticket = TriageTicketRecord(
         payment_id=payment.id,
         recovery_id=None,
@@ -64,9 +70,9 @@ def create_triage_ticket(
         customer_name=payment.customer_name,
         customer_email_masked=payment.customer_email_masked,
         amount_paise=payment.amount_paise,
-        customer_history=customer_profile(db, payment),
+        customer_history=history,
         low_confidence_reasons=list(decision.reasons),
-        priority_score=float(decision.priority_score),
+        priority_score=priority,
         status="open",
     )
     db.add(ticket)

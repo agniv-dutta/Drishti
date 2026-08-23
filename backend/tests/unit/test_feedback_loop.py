@@ -307,7 +307,7 @@ class TestLearningAPI:
         assert body["learning_prompt"] == ""
         assert body["aggregates"]["total_attempts"] >= 0
 
-    def test_execute_feeds_the_loop(self, client, ingested_payment):
+    def test_execute_feeds_the_loop(self, client, ingested_payment, auto_confidence):
         executed = client.post(
             "/api/v1/recovery/execute",
             json={"payment_id": ingested_payment["payment_id"], "dry_run": False},
@@ -329,7 +329,7 @@ class TestLearningAPI:
         finally:
             session.close()
 
-    def test_dry_run_does_not_feed_the_loop(self, client, ingested_payment):
+    def test_dry_run_does_not_feed_the_loop(self, client, ingested_payment, auto_confidence):
         executed = client.post(
             "/api/v1/recovery/execute",
             json={"payment_id": ingested_payment["payment_id"], "dry_run": True},
@@ -343,3 +343,5 @@ class TestLearningAPI:
             assert count == 0, "dry runs must not create learning events"
         finally:
             session.close()
+
+

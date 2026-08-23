@@ -8,7 +8,7 @@ def test_model_drift_is_mean_absolute_error():
     assert MetricsCollector.model_drift_score([], []) == 0.0
 
 
-def test_metrics_summary_and_prometheus_export(client, sample_failed_payment):
+def test_metrics_summary_and_prometheus_export(client, sample_failed_payment, auto_confidence):
     ingest = client.post("/api/v1/payment/ingest", json=sample_failed_payment)
     payment_id = ingest.json()["payment_id"]
     assert client.post("/api/v1/recovery/plan", json={"payment_id": payment_id}).status_code == 200
@@ -28,3 +28,5 @@ def test_metrics_summary_and_prometheus_export(client, sample_failed_payment):
     assert prometheus.status_code == 200
     assert "drishti_recovery_rate" in prometheus.text
     assert "drishti_model_drift_score" in prometheus.text
+
+

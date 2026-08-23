@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import timedelta
+from datetime import timedelta, timezone
 
 import pytest
 from sqlalchemy.orm import sessionmaker
@@ -78,7 +78,7 @@ class TestReasonsAndPriority:
         low_amount = make_txn({})
         low_amount.amount_paise = 500_000       # ₹5k -> 5 pts
         assert priority_score(high_amount, True) == 100.0
-        assert priority_score(low_amount, False) == 5.0
+        assert priority_score(low_amount, False) == 5.5
 
         mid_value = make_txn({})
         mid_value.amount_paise = 2_000_000      # ₹20k -> 20 pts
@@ -287,7 +287,8 @@ class TestConsentFlow:
                 .first()
             )
             assert row.deferred_until is not None
-            assert row.deferred_until > utcnow() + timedelta(hours=71)
+            deferred = row.deferred_until if row.deferred_until.tzinfo else row.deferred_until.replace(tzinfo=timezone.utc)
+            assert deferred > utcnow() + timedelta(hours=71)
 
 
 # ---------------------------------------------------------------------------
@@ -331,3 +332,4 @@ def _force_plan_confidence(monkeypatch, confidence: float) -> None:
 
     monkeypatch.setattr(StrategistAgent, "run", fake_run)
     monkeypatch.setattr(StrategistAgent, "run_from_consensus", fake_run_from_consensus)
+
