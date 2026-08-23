@@ -1,7 +1,7 @@
 """AnalyzerAgent - classifies why a payment failed and how retryable it is.
 
 Pipeline: gateway error-code mapping -> retryability matrix -> ML risk score
--> optional Claude enrichment for ambiguous cases. Fully functional without
+-> optional Groq enrichment for ambiguous cases. Fully functional without
 an LLM key (rule engine), upgraded when one is present.
 """
 
@@ -99,16 +99,16 @@ class AnalyzerAgent(BaseAgent):
         analyzed_by = "rule-engine"
         summary = None
 
-        # Claude enrichment only for unmapped/ambiguous failures.
+        # Groq enrichment only for unmapped/ambiguous failures.
         if reason == FailureReason.UNKNOWN and self.llm_enabled:
             enriched = await self._llm_classify(txn)
             if enriched:
                 reason, summary, llm_confidence = enriched
                 retryability = RETRYABILITY_BY_REASON[reason]
                 wait_minutes = WAIT_MINUTES_BY_REASON[reason]
-                reasoning.append(f"claude: {summary}")
+                reasoning.append(f"groq: {summary}")
                 confidence = max(confidence, llm_confidence)
-                analyzed_by = f"rule-engine+{get_settings().claude_model}"
+                analyzed_by = f"rule-engine+{get_settings().groq_model}"
 
         analysis = FailureAnalysis(
             payment_id=txn.payment_id,

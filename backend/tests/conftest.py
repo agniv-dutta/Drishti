@@ -23,7 +23,7 @@ os.environ["LOG_LEVEL"] = "WARNING"
 os.environ["ENVIRONMENT"] = "development"
 # Deterministic Fernet key: base64("0" * 32)
 os.environ["ENCRYPTION_KEY"] = "MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
-os.environ["ANTHROPIC_API_KEY"] = ""  # rule-engine mode for reproducible tests
+os.environ["GROQ_API_KEY"] = ""  # rule-engine mode for reproducible tests
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

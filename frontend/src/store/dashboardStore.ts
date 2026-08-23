@@ -3,7 +3,6 @@ import type {
   DashboardActivityItem,
   DashboardJourney,
   DashboardJourneyNode,
-  DashboardOverview,
   Payment,
 } from '../types/dashboard';
 import { dashboardAPI } from '../services/api';
@@ -124,6 +123,15 @@ const mapJourney = (journey: DashboardJourneyApi): DashboardJourney => ({
   generatedAt: journey.generated_at,
 });
 
+const mapActivity = (activity: DashboardOverviewApi['activity_feed'][number]): DashboardActivityItem => ({
+  label: activity.label,
+  action: activity.action,
+  amount: activity.amount,
+  time: activity.time,
+  icon: activity.icon,
+  paymentId: activity.payment_id,
+});
+
 export const useDashboardStore = create<DashboardStore>((set, get) => ({
   payments: [],
   recoveryRate: 0,
@@ -148,7 +156,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
         totalRecovered: overview.total_recovered,
         totalPaymentsProcessed: overview.total_payments_processed,
         selectedPaymentId: overview.selected_payment_id,
-        activityFeed: overview.activity_feed,
+        activityFeed: overview.activity_feed.map(mapActivity),
       });
     } catch (error) {
       set({
@@ -190,7 +198,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
         totalRecovered: overview.total_recovered,
         totalPaymentsProcessed: overview.total_payments_processed,
         selectedPaymentId: nextSelectedPaymentId,
-        activityFeed: overview.activity_feed,
+        activityFeed: overview.activity_feed.map(mapActivity),
       });
 
       if (nextSelectedPaymentId) {

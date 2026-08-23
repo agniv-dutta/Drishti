@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
-import type { DashboardJourney, DashboardOverview, Payment } from '../types/dashboard';
+import type { DashboardJourney, Payment } from '../types/dashboard';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -13,31 +13,33 @@ const apiClient: AxiosInstance = axios.create({
 const getApiKey = () => import.meta.env.VITE_API_KEY || localStorage.getItem('verityApiKey') || localStorage.getItem('apiKey') || '';
 
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const headers = config.headers ?? {};
   const apiKey = getApiKey();
   const authToken = localStorage.getItem('authToken');
 
   if (apiKey) {
-    if (typeof config.headers.set === 'function') {
-      config.headers.set('X-API-Key', apiKey);
+    if (typeof headers.set === 'function') {
+      headers.set('X-API-Key', apiKey);
     } else {
-      config.headers['X-API-Key'] = apiKey;
+      headers['X-API-Key'] = apiKey;
     }
   }
 
   if (authToken) {
-    if (typeof config.headers.set === 'function') {
-      config.headers.set('Authorization', `Bearer ${authToken}`);
+    if (typeof headers.set === 'function') {
+      headers.set('Authorization', `Bearer ${authToken}`);
     } else {
-      config.headers.Authorization = `Bearer ${authToken}`;
+      headers.Authorization = `Bearer ${authToken}`;
     }
   }
 
+  config.headers = headers;
   return config;
 });
 
 export const dashboardAPI = {
   getOverview: (paymentId?: string, limit = 5) =>
-    apiClient.get<DashboardOverview>('/dashboard/overview', {
+    apiClient.get<unknown>('/dashboard/overview', {
       params: {
         payment_id: paymentId,
         limit,
@@ -45,7 +47,7 @@ export const dashboardAPI = {
     }),
 
   getJourney: (paymentId: string) =>
-    apiClient.get<DashboardJourney>(`/dashboard/journey/${paymentId}`),
+    apiClient.get<unknown>(`/dashboard/journey/${paymentId}`),
 };
 
 export const paymentsAPI = {

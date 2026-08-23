@@ -119,7 +119,7 @@ const formatCurrency = (value: number) =>
     maximumFractionDigits: 0,
   }).format(Math.round(value));
 
-const DashboardPage: React.FC = () => {
+const DashboardPage: React.FC<{ paymentId?: string | null }> = ({ paymentId }) => {
   const loadDashboard = useDashboardStore((state) => state.loadDashboard);
   const selectPayment = useDashboardStore((state) => state.selectPayment);
   const journey = useDashboardStore((state) => state.journey);
@@ -137,8 +137,8 @@ const DashboardPage: React.FC = () => {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   useEffect(() => {
-    void loadDashboard();
-  }, [loadDashboard]);
+    void loadDashboard(paymentId ?? undefined);
+  }, [loadDashboard, paymentId]);
 
   const journeyNodes = journey?.nodes.length ? journey.nodes : fallbackNodes;
   const currentJourney = journey ?? null;
@@ -165,17 +165,17 @@ const DashboardPage: React.FC = () => {
   return (
     <div className="journey-page">
       <header className="journey-header">
-        <div className="journey-brand">
+        <a href="#/" className="journey-brand" aria-label="Back to Drishti home">
           <div className="journey-logo" aria-hidden="true">
             <span />
           </div>
           <span>Verity</span>
-        </div>
+        </a>
 
         <nav className="journey-nav" aria-label="Primary">
-          <a href="#">Platform</a>
-          <a href="#" className="active">
-            Solutions
+          <a href="#/dashboard">Dashboard</a>
+          <a href="#/dashboard" className="active">
+            Recovery Journey
           </a>
           <a href="#">Integrations</a>
           <a href="#">Company</a>

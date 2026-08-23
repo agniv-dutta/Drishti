@@ -1,7 +1,3 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 @layer base {
   :root {
   /* Primary */
@@ -59,27 +55,62 @@
 
 @layer components {
   .btn-primary {
-    @apply px-6 py-3 bg-coral text-white rounded-lg font-semibold hover:scale-105 transition-transform shadow-md;
+    padding: 0.75rem 1.5rem;
+    background: var(--coral);
+    color: #ffffff;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    box-shadow: 0 4px 14px rgba(255, 107, 84, 0.2);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
   }
 
   .btn-secondary {
-    @apply px-6 py-3 border-2 border-coral text-coral rounded-lg font-semibold hover:bg-coral hover:text-white transition;
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    color: var(--coral);
+    border: 2px solid var(--coral);
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
   }
 
   .card {
-    @apply bg-cream border border-sage rounded-lg p-8 shadow-card hover:shadow-card-hover transition-shadow;
+    background: var(--cream);
+    border: 1px solid var(--sage);
+    border-radius: 0.5rem;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.2s ease;
   }
 
   .badge-success {
-    @apply bg-coral text-white px-3 py-1 rounded-full text-sm font-medium;
+    background: var(--coral);
+    color: #ffffff;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 500;
   }
 
   .badge-warning {
-    @apply bg-apricot text-charcoal px-3 py-1 rounded-full text-sm font-medium;
+    background: var(--apricot);
+    color: var(--charcoal);
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 500;
   }
 
   .badge-error {
-    @apply bg-rose text-white px-3 py-1 rounded-full text-sm font-medium;
+    background: var(--rose);
+    color: #ffffff;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 500;
   }
 }
 

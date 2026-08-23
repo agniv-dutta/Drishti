@@ -57,7 +57,16 @@ const LandingPage: React.FC = () => {
 
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [email, setEmail] = useState('');
-  const [ctaIntent, setCtaIntent] = useState<'trial' | 'demo' | null>(null);
+  const [ctaIntent, setCtaIntent] = useState<'demo' | null>(null);
+
+  const goToDashboard = () => {
+    window.location.hash = '#/dashboard';
+  };
+
+  const handleCtaContinue = () => {
+    setCtaIntent(null);
+    goToDashboard();
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -66,13 +75,13 @@ const LandingPage: React.FC = () => {
     return () => clearInterval(timer);
   }, [testimonials.length]);
 
-  const openCtaModal = (intent: 'trial' | 'demo') => {
+  const openCtaModal = (intent: 'demo') => {
     setCtaIntent(intent);
   };
 
   const handleCtaSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setCtaIntent('trial');
+    goToDashboard();
   };
 
   return (
@@ -102,8 +111,8 @@ const LandingPage: React.FC = () => {
         </nav>
 
         <div className="login-container">
-          <a href="#" className="client-login">Client Login</a>
-          <a href="#" className="btn-started">Get Started</a>
+          <a href="#/dashboard" className="client-login">Client Login</a>
+          <a href="#/dashboard" className="btn-started">Get Started</a>
         </div>
       </header>
 
@@ -132,6 +141,7 @@ const LandingPage: React.FC = () => {
           
           <motion.button 
             className="cta-button"
+            onClick={goToDashboard}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
@@ -390,7 +400,7 @@ const LandingPage: React.FC = () => {
             <button
               type="button"
               className="final-cta-primary"
-              onClick={() => openCtaModal('trial')}
+              onClick={goToDashboard}
             >
               Start Your Free Trial
             </button>
@@ -433,7 +443,7 @@ const LandingPage: React.FC = () => {
             </button>
             <p className="cta-modal-kicker">Next step</p>
             <h3 id="cta-modal-title">
-              {ctaIntent === 'trial' ? 'Start your free trial' : 'Schedule your demo'}
+              Schedule your demo
             </h3>
             <p className="cta-modal-copy">
               {email
@@ -441,7 +451,7 @@ const LandingPage: React.FC = () => {
                 : 'Add your email above and we’ll route you to the right onboarding flow.'}
             </p>
             <div className="cta-modal-actions">
-              <button type="button" className="cta-modal-primary" onClick={() => setCtaIntent(null)}>
+              <button type="button" className="cta-modal-primary" onClick={handleCtaContinue}>
                 Continue
               </button>
             </div>
