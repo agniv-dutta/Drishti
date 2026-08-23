@@ -8,32 +8,38 @@ const LandingPage: React.FC = () => {
     {
       title: "Payment Retry Optimizer",
       desc: "Intelligent retry logic with soft decline detection",
-      icon: <RefreshCw size={24} />
+      icon: <RefreshCw size={24} />,
+      href: '#/page/platform',
     },
     {
       title: "SMS Recovery Campaigns",
       desc: "Personalized text outreach with link tracking",
-      icon: <MessageSquare size={24} />
+      icon: <MessageSquare size={24} />,
+      href: '#/page/solutions',
     },
     {
       title: "Voice Outreach (Hinglish)",
       desc: "IVR-based customer contact in local language",
-      icon: <PhoneCall size={24} />
+      icon: <PhoneCall size={24} />,
+      href: '#/page/integrations',
     },
     {
       title: "Smart Offer Engine",
       desc: "Dynamic discounts & installment plans",
-      icon: <Tag size={24} />
+      icon: <Tag size={24} />,
+      href: '#/page/solutions',
     },
     {
       title: "B2B Receivables Chaser",
       desc: "Automated follow-up for overdue invoices",
-      icon: <FileText size={24} />
+      icon: <FileText size={24} />,
+      href: '#/page/company',
     },
     {
       title: "Real-time Audit Trail",
       desc: "Full compliance logging & transparency",
-      icon: <ClipboardList size={24} />
+      icon: <ClipboardList size={24} />,
+      href: '#/page/company',
     }
   ];
 
@@ -104,15 +110,15 @@ const LandingPage: React.FC = () => {
         </div>
         
         <nav className="header-nav">
-          <a href="#" className="nav-link">Platform</a>
-          <a href="#" className="nav-link">Solutions</a>
-          <a href="#" className="nav-link">Integrations</a>
-          <a href="#" className="nav-link">Company</a>
+          <a href="#/page/platform" className="nav-link">Platform</a>
+          <a href="#/page/solutions" className="nav-link">Solutions</a>
+          <a href="#/page/integrations" className="nav-link">Integrations</a>
+          <a href="#/page/company" className="nav-link">Company</a>
         </nav>
 
         <div className="login-container">
-          <a href="#/dashboard" className="client-login">Client Login</a>
-          <a href="#/dashboard" className="btn-started">Get Started</a>
+          <a href="#/page/client-login" className="client-login">Client Login</a>
+          <a href="#/page/get-started" className="btn-started">Get Started</a>
         </div>
       </header>
 
@@ -300,7 +306,7 @@ const LandingPage: React.FC = () => {
               </div>
               <h3 className="feature-title">{feature.title}</h3>
               <p className="feature-desc">{feature.desc}</p>
-              <a href="#" className="feature-link">
+              <a href={feature.href} className="feature-link">
                 Learn more <ArrowRight size={16} />
               </a>
             </motion.div>

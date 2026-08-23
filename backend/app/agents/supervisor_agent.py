@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.agents.analyzer_agent import AnalyzerAgent
 from app.agents.base_agent import BaseAgent
+from app.agents.consensus_agent import ConsensusAgent
 from app.agents.executor_agent import ExecutorAgent
 from app.agents.prompts import AUDIT_SUPERVISOR_SYSTEM_PROMPT
 from app.agents.strategist_agent import StrategistAgent
@@ -75,12 +76,13 @@ class SupervisorAgent(BaseAgent):
         self.analyzer = AnalyzerAgent()
         self.strategist = StrategistAgent()
         self.executor = ExecutorAgent()
+        self.consensus = ConsensusAgent()
 
     # ------------------------------------------------------------------
     # helpers
     # ------------------------------------------------------------------
     def _bind_all(self, db: Session) -> None:
-        for agent in (self.analyzer, self.strategist, self.executor):
+        for agent in (self.analyzer, self.strategist, self.executor, self.consensus):
             agent.bind_db(db)
         self.bind_db(db)
 
@@ -304,7 +306,12 @@ class SupervisorAgent(BaseAgent):
         db.add(record)
         db.flush()
 
-        plan = await self.strategist.run(txn, analysis, override_strategy)
+        if override_strategy is None and self.consensus.applies(txn):
+            # High-value payment: three-persona debate decides the strategy.
+            decision = await self.consensus.run(txn, analysis)
+            plan = await self.strategist.run_from_consensus(txn, analysis, decision)
+        else:
+            plan = await self.strategist.run(txn, analysis, override_strategy)
 
         recovery_record: Optional[RecoveryRecord] = None
         if persist:

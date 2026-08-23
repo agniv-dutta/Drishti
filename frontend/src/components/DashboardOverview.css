@@ -348,6 +348,117 @@
   font-size: 14px;
 }
 
+.dashboard-subgrid {
+  margin-top: 34px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.dashboard-subpanel {
+  padding: 24px;
+  border-radius: 16px;
+  background: #2a2727;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.18);
+}
+
+.dashboard-subpanel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  color: #f2f2f2;
+}
+
+.dashboard-subpanel-head h2 {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+
+.dashboard-subcopy {
+  color: rgba(247, 240, 234, 0.7);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.dashboard-mini-list,
+.dashboard-audit-list,
+.dashboard-settings-list {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dashboard-mini-row,
+.dashboard-feed-inline,
+.dashboard-audit-row,
+.dashboard-settings-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dashboard-mini-row {
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dashboard-mini-row span,
+.dashboard-audit-row span,
+.dashboard-settings-row span,
+.dashboard-feed-inline span {
+  color: rgba(247, 240, 234, 0.72);
+  font-size: 14px;
+}
+
+.dashboard-mini-row strong,
+.dashboard-audit-row strong,
+.dashboard-settings-row strong,
+.dashboard-feed-inline strong {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.dashboard-mini-row em,
+.dashboard-audit-row em {
+  color: #ffab9a;
+  font-style: normal;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dashboard-summary-pills {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.dashboard-summary-pills span {
+  padding: 9px 12px;
+  border-radius: 999px;
+  background: rgba(255, 116, 90, 0.12);
+  border: 1px solid rgba(255, 116, 90, 0.18);
+  color: #ffcabf;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
 .dashboard-table-wrap {
   overflow: hidden;
   border-radius: 14px;
@@ -553,6 +664,10 @@
   .dashboard-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .dashboard-subgrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -590,5 +705,13 @@
 
   .dashboard-feed-panel {
     padding: 20px 16px;
+  }
+
+  .dashboard-mini-row,
+  .dashboard-feed-inline,
+  .dashboard-audit-row,
+  .dashboard-settings-row {
+    grid-template-columns: 1fr;
+    justify-items: start;
   }
 }

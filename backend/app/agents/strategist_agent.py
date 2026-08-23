@@ -8,6 +8,7 @@ import uuid
 from typing import Dict, List, Optional, Tuple
 
 from app.agents.base_agent import BaseAgent
+from app.agents.consensus_agent import ConsensusDecision
 from app.agents.prompts import STRATEGY_SELECTOR_SYSTEM_PROMPT
 from app.core.config import get_settings
 from app.ml.data_preprocessor import build_features, build_strategy_features
@@ -106,6 +107,90 @@ class StrategistAgent(BaseAgent):
             },
         )
         return plan
+
+    async def run_from_consensus(
+        self,
+        txn: PaymentTransaction,
+        analysis: FailureAnalysis,
+        decision: ConsensusDecision,
+    ) -> RecoveryPlan:
+        """Build the plan from a ConsensusAgent weighted-vote outcome."""
+        started = time.perf_counter()
+        classifier = get_recovery_classifier()
+        ranked = classifier.rank_channels(analysis.retryability, build_features(txn))
+        winner = next(r for r in decision.recommendations if r.agent_name == decision.winner_agent)
+
+        steps = self._steps_from_channels(winner.channels, winner.first_step_delay_minutes, analysis)
+        total_cost = sum(step.estimated_cost_paise for step in steps)
+        expected_success = self._expected_success(winner.strategy, analysis, ranked)
+        rationale = self._consensus_rationale(decision)
+
+        plan = RecoveryPlan(
+            plan_id=uuid.uuid4().hex,
+            payment_id=txn.payment_id,
+            strategy=winner.strategy,
+            steps=steps,
+            expected_success_probability=expected_success,
+            total_estimated_cost_paise=total_cost,
+            rationale=rationale,
+            created_by=f"{self.name}+consensus({decision.winner_agent})",
+        )
+
+        self.audit(
+            AuditEventType.RECOVERY_PLAN_CREATED,
+            resource_type="recovery",
+            resource_id=plan.plan_id,
+            outcome=winner.strategy.value,
+            details={
+                "payment_id": txn.payment_id,
+                "step_count": len(steps),
+                "estimated_cost_paise": total_cost,
+                "expected_success_probability": expected_success,
+                "consensus_winner": decision.winner_agent,
+                "agreement_ratio": decision.agreement_ratio,
+                "latency_ms": round((time.perf_counter() - started) * 1000, 1),
+            },
+        )
+        return plan
+
+    def _steps_from_channels(
+        self,
+        channels: List[RecoveryChannel],
+        first_delay_minutes: int,
+        analysis: FailureAnalysis,
+    ) -> List[RecoveryStep]:
+        gap = max(analysis.suggested_wait_minutes // max(len(channels) - 1, 1), 60) if len(channels) > 1 else 0
+        steps: List[RecoveryStep] = []
+        for index, channel in enumerate(channels):
+            delay = first_delay_minutes if index == 0 else min(
+                first_delay_minutes + gap * index,
+                first_delay_minutes + 60 * 24 * 3,  # never stretch beyond 3 days
+            )
+            steps.append(
+                RecoveryStep(
+                    sequence=index + 1,
+                    channel=channel,
+                    delay_minutes=delay,
+                    estimated_cost_paise=step_cost(channel),
+                )
+            )
+        return steps
+
+    def _consensus_rationale(self, decision: ConsensusDecision) -> str:
+        votes = "; ".join(
+            f"{rec.agent_name}={rec.strategy.value}@{rec.confidence:.0f}%"
+            for rec in sorted(
+                decision.recommendations,
+                key=lambda r: decision.weighted_scores.get(r.agent_name, 0.0),
+                reverse=True,
+            )
+        )
+        return (
+            f"Multi-agent consensus on Rs {decision.amount_inr:,.0f} failure "
+            f"(threshold Rs {decision.threshold_inr:,.0f}). Votes: {votes}. "
+            f"Winner {decision.winner_agent} -> {decision.winning_strategy.value} "
+            f"(weighted agreement {decision.agreement_ratio:.0%})."
+        )
 
     # ------------------------------------------------------------------
     def _build_steps(

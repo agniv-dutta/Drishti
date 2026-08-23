@@ -114,6 +114,10 @@ class Settings(BaseSettings):
     invalid_phone_numbers: str = ""
     verity_checkpoint_path: str = "logs/verity_checkpoints.db"
 
+    # ---- Multi-agent consensus (high-value payments) ----
+    consensus_enabled: bool = True
+    consensus_amount_threshold_inr: float = 50000.0
+
     # ------------------------------------------------------------------
     @field_validator("debug", mode="before")
     @classmethod

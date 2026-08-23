@@ -1,7 +1,7 @@
 """Abstract agent base class shared by all Drishti agents.
 
 Provides structured logging, audit-trail emission (JSONL), and an optional
-Claude reasoning hook that degrades gracefully to ``None`` when no API key is
+Groq reasoning hook that degrades gracefully to ``None`` when no API key is
 configured - the rule engine remains fully functional offline.
 """
 
