@@ -171,7 +171,7 @@ const DashboardPage: React.FC<{ paymentId?: string | null }> = ({ paymentId }) =
           <div className="journey-logo" aria-hidden="true">
             <span />
           </div>
-          <span>Verity</span>
+          <span>Drishti</span>
         </a>
 
         <nav className="journey-nav" aria-label="Primary">
@@ -431,8 +431,8 @@ const DashboardPage: React.FC<{ paymentId?: string | null }> = ({ paymentId }) =
       </main>
 
       <footer className="journey-footer">
-        <div className="journey-footer-brand">Verity</div>
-        <div className="journey-footer-copy">© 2024 Verity Revenue Recovery. All rights reserved.</div>
+        <div className="journey-footer-brand">Drishti</div>
+        <div className="journey-footer-copy">© 2024 Drishti Revenue Recovery. All rights reserved.</div>
         <div className="journey-footer-links">
           <a href="#">Privacy Policy</a>
           <a href="#">Terms of Service</a>

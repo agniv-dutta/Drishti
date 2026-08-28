@@ -86,7 +86,7 @@ const content: Record<FeaturePageSlug, {
   company: {
     eyebrow: 'Company',
     title: 'Built for teams that care about recovery and trust',
-    copy: 'Verity is designed around visibility, compliance, and a clean handoff between automation and humans.',
+    copy: 'Drishti is designed around visibility, compliance, and a clean handoff between automation and humans.',
     primary: { label: 'Meet the Platform', href: '#/page/platform' },
     secondary: { label: 'Contact Sales', href: '#/page/client-login' },
     stats: [
@@ -162,7 +162,7 @@ const FeaturePage: React.FC<FeaturePageProps> = ({ slug }) => {
           <span className="feature-brand-mark" aria-hidden="true">
             V
           </span>
-          <span>Verity</span>
+          <span>Drishti</span>
         </a>
 
         <nav className="feature-nav" aria-label="Primary">

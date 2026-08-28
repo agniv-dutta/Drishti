@@ -11,7 +11,7 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
-const getApiKey = () => import.meta.env.VITE_API_KEY || localStorage.getItem('verityApiKey') || localStorage.getItem('apiKey') || '';
+const getApiKey = () => import.meta.env.VITE_API_KEY || localStorage.getItem('DrishtiApiKey') || localStorage.getItem('apiKey') || '';
 
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const headers = config.headers ?? {};

@@ -8,6 +8,7 @@ Run locally:
 
 from __future__ import annotations
 
+import asyncio
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -38,9 +39,13 @@ async def lifespan(_: FastAPI):
     )
     init_db()
     logger.info("startup.complete", docs_url="/docs")
-    yield
-    dispose_db()
-    logger.info("shutdown.complete")
+    try:
+        yield
+    except asyncio.CancelledError:
+        logger.info("shutdown.cancelled")
+    finally:
+        dispose_db()
+        logger.info("shutdown.complete")
 
 
 def create_app() -> FastAPI:
@@ -138,11 +143,13 @@ if __name__ == "__main__":
     import uvicorn
 
     cfg = get_settings()
-    uvicorn.run(
-        "main:app",
-        host=cfg.host,
-        port=cfg.port,
-        reload=cfg.debug and not cfg.is_production,
-        log_config=None,
-    )
-
+    try:
+        uvicorn.run(
+            "main:app",
+            host=cfg.host,
+            port=cfg.port,
+            reload=cfg.debug and not cfg.is_production,
+            log_config=None,
+        )
+    except KeyboardInterrupt:
+        pass

@@ -10,7 +10,7 @@ from sqlalchemy import text
 from app.cache.redis_client import get_cache
 from app.core.config import get_settings
 from app.core.logging_config import get_logger
-from app.database.session import get_engine
+from app.database.session import get_database_mode, get_engine
 
 router = APIRouter(tags=["health"])
 logger = get_logger("drishti.health")
@@ -49,10 +49,12 @@ async def health() -> Dict:
     db_ok = _check_db()
     cache_ok = await _check_cache()
     status = "ok" if db_ok else "degraded"
+    database_mode = get_database_mode()
     return {
         "status": status,
         "components": {
             "database": "up" if db_ok else "down",
+            "database_mode": database_mode,
             "cache": "up" if cache_ok else "fallback-memory",
         },
         "llm_reasoning": "enabled" if get_settings().llm_enabled else "rule-engine",

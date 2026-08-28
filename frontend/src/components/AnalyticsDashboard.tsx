@@ -78,7 +78,7 @@ const AnalyticsDashboard: React.FC = () => {
 
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
-    const apiKey = import.meta.env.VITE_API_KEY || localStorage.getItem('verityApiKey') || localStorage.getItem('apiKey') || '';
+    const apiKey = import.meta.env.VITE_API_KEY || localStorage.getItem('DrishtiApiKey') || localStorage.getItem('apiKey') || '';
     const socketUrl = `${apiUrl.replace(/^http/, 'ws')}/metrics/stream?api_key=${encodeURIComponent(apiKey)}`;
     let socket: WebSocket | undefined;
     try {
@@ -103,7 +103,7 @@ const AnalyticsDashboard: React.FC = () => {
   return (
     <div className="analytics-page">
       <header className="analytics-topbar">
-        <a href="#/" className="analytics-brand" aria-label="Back to home"><span className="analytics-brand-mark">V</span><span>Verity</span></a>
+        <a href="#/" className="analytics-brand" aria-label="Back to home"><span className="analytics-brand-mark">V</span><span>Drishti</span></a>
         <nav className="analytics-nav" aria-label="Primary"><a href="#/dashboard/overview">Operations</a><a className="active" href="#/dashboard/analytics">Analytics</a><a href="#/page/integrations">Integrations</a><a href="#/page/company">Company</a></nav>
         <div className="analytics-top-actions"><span className={`live-status ${connected ? 'connected' : ''}`}><i />{connected ? 'Live' : 'Snapshot'}</span><a href="#/page/client-login">Client Login</a></div>
       </header>

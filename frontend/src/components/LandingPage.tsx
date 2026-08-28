@@ -400,7 +400,7 @@ const LandingPage: React.FC = () => {
         >
           <div className="final-cta-badge">Built for recovery-led growth</div>
           <h2 id="final-cta-title" className="final-cta-title">Ready to Stop Losing Revenue?</h2>
-          <p className="final-cta-subtitle">Join merchants recovering ₹250Cr+ with Verity</p>
+          <p className="final-cta-subtitle">Join merchants recovering ₹250Cr+ with Drishti</p>
 
           <div className="final-cta-actions" role="group" aria-label="Primary actions">
             <button

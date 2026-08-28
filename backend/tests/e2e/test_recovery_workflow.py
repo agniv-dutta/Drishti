@@ -122,3 +122,4 @@ class TestAuditAndMetrics:
     def test_health_reports_components(self, client):
         health = client.get("/health").json()
         assert health["components"]["database"] == "up"
+        assert health["components"]["database_mode"] in {"sqlite", "sqlite-fallback", "postgresql"}
