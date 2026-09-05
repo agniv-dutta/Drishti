@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import io
+import random
 from datetime import timedelta
 from typing import List, Optional
 
@@ -142,16 +143,22 @@ async def get_payment_journey(
 async def batch_ingest(
     request: Request,
     payments: Optional[List[PaymentIngestRequest]] = None,
+    num_payments: Optional[int] = Query(default=None, ge=1, le=10_000),
     db: Session = Depends(get_db),
 ) -> dict:
     started = measure()
-    body = await request.json()
+    try:
+        body = await request.json()
+    except ValueError:
+        body = {}
     records = body.get("payments") or body.get("items") or []
     csv_content = body.get("csv")
     if records and isinstance(records, list):
         payloads = [PaymentIngestRequest(**item) for item in records]
     elif csv_content:
         payloads = _parse_csv(csv_content)
+    elif num_payments is not None:
+        payloads = _synthetic_payloads(num_payments)
     else:
         return error("INVALID_BATCH", "Provide 'payments', 'items', or 'csv' in the request body", status_code=400, latency_ms=elapsed_ms(started), request=request)
 
@@ -171,6 +178,33 @@ async def batch_ingest(
     db.commit()
     data = {"ingested": len(results), "duplicates": sum(1 for r in results if r["duplicate"]), "results": results}
     return success(data, agents=["PaymentAnalyzer", "SupervisorAgent"], latency_ms=elapsed_ms(started))
+
+
+def _synthetic_payloads(count: int) -> List[PaymentIngestRequest]:
+    failure_reasons = [
+        "insufficient_funds",
+        "bank_decline",
+        "card_expired",
+        "authentication_timeout",
+        "network_error",
+    ]
+    amounts = [500, 1000, 2000, 5000, 10000]
+    return [
+        PaymentIngestRequest(
+            order_id=f"synthetic_order_{index:06d}",
+            customer={
+                "name": f"Synthetic Customer {index}",
+                "email": f"synthetic-{index}@example.com",
+                "phone": f"+9190000{index:05d}",
+            },
+            amount=random.choice(amounts),
+            method="card",
+            failure_reason_code=random.choice(failure_reasons),
+            error_description="Synthetic payment failure",
+            metadata={"source": "synthetic"},
+        )
+        for index in range(count)
+    ]
 
 
 def _parse_csv(content: str) -> List[PaymentIngestRequest]:

@@ -31,9 +31,11 @@ from app.routes.api_v1 import (
     dashboard as dashboard_v1,
     mandates,
     payments,
+    promise_to_pay,
     receivables,
     recoveries,
     subscriptions,
+    voice,
     workflows as workflows_v1,
 )
 
@@ -148,6 +150,9 @@ def create_app() -> FastAPI:
     application.include_router(receivables.router, prefix=api)
     application.include_router(subscriptions.router, prefix=api)
     application.include_router(mandates.router, prefix=api)
+    application.include_router(voice.router, prefix=api)
+    application.include_router(voice.public_router, prefix=api)
+    application.include_router(promise_to_pay.router, prefix=api)
     application.include_router(recoveries.router, prefix=api)
     application.include_router(agents_v1.router, prefix=api)
     application.include_router(audit_v1.router, prefix=api)

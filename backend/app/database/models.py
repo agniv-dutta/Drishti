@@ -425,6 +425,63 @@ class MandateRetry(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class VoiceCallLog(Base):
+    """Voice recovery call state and customer response audit record."""
+
+    __tablename__ = "voice_call_logs"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    call_id: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    payment_id: Mapped[str] = mapped_column(ForeignKey("payments.id"), index=True)
+    language: Mapped[str] = mapped_column(String(20), default="en")
+    status: Mapped[str] = mapped_column(String(24), default="initiated", index=True)
+    script: Mapped[Dict[str, Any]] = mapped_column(JSON, default=dict)
+    recording_consent: Mapped[bool] = mapped_column(Boolean, default=False)
+    customer_choice: Mapped[Optional[str]] = mapped_column(String(8))
+    action_taken: Mapped[Optional[str]] = mapped_column(String(24))
+    action_message: Mapped[Optional[str]] = mapped_column(Text)
+    duration_seconds: Mapped[int] = mapped_column(Integer, default=0)
+    recording_url: Mapped[Optional[str]] = mapped_column(String(512))
+    initiated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PromiseToPay(Base):
+    """Customer commitment to settle a failed payment by a promised date."""
+
+    __tablename__ = "promise_to_pay"
+    __table_args__ = (
+        Index("ix_promise_to_pay_merchant_status", "merchant_id", "status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    payment_id: Mapped[str] = mapped_column(ForeignKey("payments.id"), index=True)
+    merchant_id: Mapped[str] = mapped_column(String(64), index=True)
+    customer_id: Mapped[str] = mapped_column(String(64), index=True)
+    customer_name: Mapped[str] = mapped_column(String(200))
+    promised_amount: Mapped[float] = mapped_column(Float)
+    promised_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    status: Mapped[str] = mapped_column(String(20), default="open", index=True)
+    paid_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class PromiseToPayTask(Base):
+    """Reminder or breach escalation scheduled for a promise."""
+
+    __tablename__ = "promise_to_pay_tasks"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    promise_id: Mapped[str] = mapped_column(ForeignKey("promise_to_pay.id"), index=True)
+    payment_id: Mapped[str] = mapped_column(ForeignKey("payments.id"), index=True)
+    task_type: Mapped[str] = mapped_column(String(32), index=True)
+    scheduled_for: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 # ---------------------------------------------------------------------------
 # Audit trail
 # ---------------------------------------------------------------------------
