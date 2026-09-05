@@ -91,9 +91,11 @@ export const recoveryAPI = {
 };
 
 export const workflowAPI = {
-  list: () => apiClient.get<{ workflows: Workflow[] }>('/workflows'),
+  list: () => apiClient.get<{ workflows: Workflow[] }>('/workflows')
+    .then((response) => unwrap(response)),
   create: (data: { name: string; target_segment: string; variant?: string; steps: WorkflowStep[] }) =>
-    apiClient.post<Workflow>('/workflows/create', data),
+    apiClient.post<Workflow>('/workflows/create', data)
+      .then((response) => unwrap(response)),
 };
 
 export const metricsAPI = {
@@ -187,6 +189,41 @@ export const subscriptionsAPI = {
   churnRisk: (customerId: string) =>
     apiClient.get('/recovery/subscription/churn-risk', { params: { customer_id: customerId } })
       .then((response) => unwrap(response)),
+};
+
+export type VoiceCall = {
+  call_id: string;
+  payment_id: string;
+  language: string;
+  status: string;
+  ivr_prompt: { greeting: string; lines: string[]; options: Record<string, string>; language: string };
+  customer_choice: string | null;
+  resulting_action: string | null;
+  action_message: string | null;
+  duration_seconds: number;
+  recording_available: boolean;
+  recording_url: string | null;
+  recording_consent: boolean;
+  initiated_at: string;
+  completed_at: string | null;
+};
+
+export type VoiceCallStart = {
+  call_id: string;
+  status: string;
+  language: string;
+  estimated_duration: string;
+  callback_url: string;
+  recording_consent: boolean;
+};
+
+export const voiceAPI = {
+  initiate: (paymentId: string, recordingConsent = false) =>
+    apiClient.post<{ data: VoiceCallStart }>('/recovery/voice/initiate-call', null, {
+      params: { payment_id: paymentId, recording_consent: recordingConsent },
+    }).then((response) => unwrap(response)),
+  get: (callId: string) =>
+    apiClient.get<{ data: VoiceCall }>(`/recovery/voice/calls/${callId}`).then((response) => unwrap(response)),
 };
 
 export default apiClient;

@@ -66,7 +66,7 @@ const WorkflowBuilder: React.FC = () => {
   const [abTestEnabled, setAbTestEnabled] = useState(false);
   const [expandedRecommendation, setExpandedRecommendation] = useState<string | null>(null);
 
-  useEffect(() => { void workflowAPI.list().then((response) => setWorkflows(response.data.workflows)).catch(() => undefined); }, []);
+  useEffect(() => { void workflowAPI.list().then((response) => setWorkflows(response.workflows)).catch(() => undefined); }, []);
 
   const addStep = (type: WorkflowAction) => {
     const confidence = type === 'sms' ? 78 : type === 'retry' ? 85 : type === 'call' ? 62 : 50;
@@ -85,7 +85,7 @@ const WorkflowBuilder: React.FC = () => {
 
   const save = async () => {
     setStatus('saving');
-    try { const response = await workflowAPI.create({ name, target_segment: segment, variant, steps: steps.map(({ confidence, reasoning, ...step }) => step) }); setWorkflows((current) => [response.data, ...current]); setStatus('saved'); }
+    try { const response = await workflowAPI.create({ name, target_segment: segment, variant, steps: steps.map(({ confidence, reasoning, ...step }) => step) }); setWorkflows((current) => [response, ...current]); setStatus('saved'); }
     catch { setStatus('error'); }
   };
 

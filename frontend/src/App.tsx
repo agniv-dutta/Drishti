@@ -7,6 +7,7 @@ import AnalyticsDashboard from './components/AnalyticsDashboard';
 import WorkflowBuilder from './components/WorkflowBuilder';
 import ReceivablesPage from './components/ReceivablesPage';
 import SubscriptionsPage from './components/SubscriptionsPage';
+import VoiceCallPage from './components/VoiceCallPage';
 
 type Route =
   | { name: 'landing' }
@@ -14,7 +15,8 @@ type Route =
   | { name: 'feature'; slug: FeaturePageSlug }
   | { name: 'receivables' }
   | { name: 'subscriptions' }
-  | { name: 'journey'; paymentId: string | null };
+  | { name: 'journey'; paymentId: string | null }
+   | { name: 'voice'; callId: string | null }
 
 const isDashboardSection = (value: string | undefined): value is DashboardSection =>
   value === 'overview' ||
@@ -45,6 +47,9 @@ const getRoute = (): Route => {
   }
   if (segments[0] === 'journey') {
     return { name: 'journey', paymentId: segments[1] ?? null };
+  }
+  if (segments[0] === 'voice') {
+    return { name: 'voice', callId: segments[1] ?? null };
   }
   if (segments[0] === 'recovery' && segments[2] === 'journey') {
     return { name: 'journey', paymentId: segments[1] ?? null };
@@ -89,6 +94,8 @@ function App() {
         return <SubscriptionsPage />;
       case 'journey':
         return <DashboardPage paymentId={route.paymentId} />;
+      case 'voice':
+        return <VoiceCallPage callId={route.callId} />;
       case 'landing':
       default:
         return <LandingPage />;
