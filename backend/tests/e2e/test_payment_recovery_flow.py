@@ -19,5 +19,5 @@ def test_failed_payment_recovers_and_is_audited(client, sample_failed_payment, a
 
     audit = client.get("/api/v1/audit/trail", params={"resource_id": payment_id})
     assert audit.status_code == 200
-    events = {event["event_type"] for event in audit.json()["events"]}
+    events = {event["event_type"] for event in audit.json()["data"]["events"]}
     assert {"payment_ingested", "payment_analyzed"} <= events

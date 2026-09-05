@@ -223,7 +223,7 @@ class TestRoutingAPI:
             assert payment.meta["custom_message"].startswith("Hi Ravi")
 
         trail = client.get("/api/v1/audit/trail?limit=50").json()
-        events = trail.get("events") or trail.get("entries") or []
+        events = trail.get("data", {}).get("events") or trail.get("events") or trail.get("entries") or []
         assert any(
             e["event_type"] == "triage_override" and e["outcome"] == "escalated_by_agent"
             for e in events

@@ -95,7 +95,7 @@ class TestAuditAndMetrics:
 
         trail = client.get("/api/v1/audit/trail", params={"resource_id": payment_id})
         assert trail.status_code == 200
-        events = trail.json()["events"]
+        events = trail.json()["data"]["events"]
         types = {e["event_type"] for e in events}
         assert "payment_ingested" in types
         assert "payment_analyzed" in types
@@ -103,7 +103,7 @@ class TestAuditAndMetrics:
     def test_exceptions_endpoint_lists_failures(self, client):
         exceptions = client.get("/api/v1/audit/exceptions")
         assert exceptions.status_code == 200
-        assert {"total", "exceptions"} <= set(exceptions.json().keys())
+        assert {"total", "exceptions"} <= set(exceptions.json()["data"].keys())
 
     def test_metrics_reflect_executions(self, client):
         payment_id = client.post("/api/v1/payment/ingest", json=_payload()).json()["payment_id"]
