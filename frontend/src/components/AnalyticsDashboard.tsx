@@ -13,7 +13,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Activity, AlertTriangle, Bell, ChevronDown, Clock3, Grid3x3, LayoutDashboard, LogOut, RefreshCw, Settings, Wallet } from 'lucide-react';
+import { Activity, AlertTriangle, Bell, ChevronDown, ChevronLeft, ChevronRight, Clock3, Grid3x3, LayoutDashboard, LogOut, RefreshCw, Settings, Wallet } from 'lucide-react';
 import { metricsAPI } from '../services/api';
 import './AnalyticsDashboard.css';
 
@@ -46,6 +46,20 @@ const AnalyticsDashboard: React.FC = () => {
   const [connected, setConnected] = useState(false);
   const [period, setPeriod] = useState(30);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('sidebar_open');
+    if (saved !== null) setSidebarOpen(saved === 'true');
+  }, []);
+
+  const toggleSidebar = () => {
+    setSidebarOpen((current) => {
+      const next = !current;
+      localStorage.setItem('sidebar_open', JSON.stringify(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
     let active = true;
@@ -148,18 +162,24 @@ const AnalyticsDashboard: React.FC = () => {
         <div className="analytics-top-actions"><span className={`live-status ${connected ? 'connected' : ''}`}><i />{connected ? 'Live' : 'Snapshot'}</span><a href="#/page/client-login">Client Login</a></div>
       </header>
       <div className="analytics-layout">
-        <aside className="analytics-sidebar" aria-label="Sidebar navigation">
+        <aside className={`analytics-sidebar ${sidebarOpen ? 'is-open' : 'is-collapsed'}`} aria-label="Sidebar navigation">
           <div>
             <p className="analytics-sidebar-label">Workspace</p>
-            <a href="#/dashboard/overview"><LayoutDashboard size={17} />Overview</a>
-            <a href="#/dashboard/payments"><Wallet size={17} />Payments</a>
-            <a href="#/dashboard/recoveries"><RefreshCw size={17} />Recoveries</a>
-            <a className="active" href="#/dashboard/analytics"><Grid3x3 size={17} />Analytics</a>
-            <a href="#/dashboard/audit-trail"><Activity size={17} />Audit trail</a>
+            <a href="#/dashboard/overview"><LayoutDashboard size={17} /><span>Overview</span></a>
+            <a href="#/dashboard/payments"><Wallet size={17} /><span>Payments</span></a>
+            <a href="#/dashboard/recoveries"><RefreshCw size={17} /><span>Recoveries</span></a>
+            <a className="active" href="#/dashboard/analytics"><Grid3x3 size={17} /><span>Analytics</span></a>
+            <a href="#/dashboard/audit-trail"><Activity size={17} /><span>Audit trail</span></a>
           </div>
-          <div><a href="#/dashboard/settings"><Settings size={17} />Settings</a><button type="button" onClick={() => { window.location.hash = '#/'; }}><LogOut size={17} />Log out</button></div>
+          <div>
+            <a href="#/dashboard/settings"><Settings size={17} /><span>Settings</span></a>
+            <button type="button" onClick={() => { window.location.hash = '#/'; }}><LogOut size={17} /><span>Log out</span></button>
+            <button type="button" className="analytics-sidebar-toggle" onClick={toggleSidebar} aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}>
+              {sidebarOpen ? <ChevronLeft size={17} /> : <ChevronRight size={17} />}<span>{sidebarOpen ? 'Collapse' : 'Expand'}</span>
+            </button>
+          </div>
         </aside>
-        <main className="analytics-main">
+        <main className={`analytics-main ${sidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
           <section className="analytics-heading"><div><p className="analytics-eyebrow">Performance intelligence</p><h1>Recovery analytics</h1><p>One view of conversion, cost, timing, and customer friction.</p></div><label className="period-select"><Clock3 size={16} /><select value={period} onChange={(event) => setPeriod(Number(event.target.value))}><option value={7}>Last 7 days</option><option value={30}>Last 30 days</option><option value={90}>Last 90 days</option></select><ChevronDown size={15} /></label></section>
           <section className="analytics-kpis"><article><span>Recovery rate</span><strong>{percent(recoveryRate)}</strong><small className="up">+6.4% vs prior period</small></article><article><span>Revenue recovered</span><strong>{currency(recovered * 450)}</strong><small>{recovered} successful payments</small></article><article><span>Avg cost / recovery</span><strong>{currency(summary.cost_per_recovery_inr || 420)}</strong><small>-19% vs prior period</small></article><article><span>Time to recovery</span><strong>{period <= 7 ? '4h 18m' : period <= 30 ? '6h 42m' : '8h 15m'}</strong><small>Median, all strategies</small></article></section>
           {alertItems.length > 0 && <section className="analytics-alerts" aria-label="Alerts">{alertItems.map((alert) => <div className={`analytics-alert ${alert.tone}`} key={alert.text}>{alert.icon}<span>{alert.text}</span><button type="button" aria-label="Dismiss alert">×</button></div>)}</section>}

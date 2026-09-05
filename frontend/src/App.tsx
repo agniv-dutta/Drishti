@@ -5,17 +5,20 @@ import DashboardPage from './components/DashboardPage';
 import FeaturePage, { type FeaturePageSlug } from './components/FeaturePage';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import WorkflowBuilder from './components/WorkflowBuilder';
+import ReceivablesPage from './components/ReceivablesPage';
 
 type Route =
   | { name: 'landing' }
   | { name: 'dashboard'; section: DashboardSection }
   | { name: 'feature'; slug: FeaturePageSlug }
+  | { name: 'receivables' }
   | { name: 'journey'; paymentId: string | null };
 
 const isDashboardSection = (value: string | undefined): value is DashboardSection =>
   value === 'overview' ||
   value === 'payments' ||
   value === 'recoveries' ||
+  value === 'receivables' ||
   value === 'analytics' ||
   value === 'workflows' ||
   value === 'audit-trail' ||
@@ -43,6 +46,9 @@ const getRoute = (): Route => {
   if (segments[0] === 'recovery' && segments[2] === 'journey') {
     return { name: 'journey', paymentId: segments[1] ?? null };
   }
+  if (segments[0] === 'receivables') {
+    return { name: 'receivables' };
+  }
   if (segments[0] === 'page' && isFeatureSlug(segments[1])) {
     return { name: 'feature', slug: segments[1] };
   }
@@ -66,9 +72,12 @@ function App() {
       case 'dashboard':
         if (route.section === 'analytics') return <AnalyticsDashboard />;
         if (route.section === 'workflows') return <WorkflowBuilder />;
+        if (route.section === 'receivables') return <ReceivablesPage />;
         return <DashboardOverview section={route.section} />;
       case 'feature':
         return <FeaturePage slug={route.slug} />;
+      case 'receivables':
+        return <ReceivablesPage />;
       case 'journey':
         return <DashboardPage paymentId={route.paymentId} />;
       case 'landing':

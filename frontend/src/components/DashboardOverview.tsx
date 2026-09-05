@@ -8,6 +8,7 @@ import {
   Brain,
   CalendarDays,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Download,
   Grid3x3,
@@ -28,7 +29,7 @@ import type { DashboardActivityItem, Payment } from '../types/dashboard';
 import PerformanceOverview from './PerformanceOverview';
 import './DashboardOverview.css';
 
-export type DashboardSection = 'overview' | 'payments' | 'recoveries' | 'analytics' | 'workflows' | 'audit-trail' | 'agent-operations' | 'settings';
+export type DashboardSection = 'overview' | 'payments' | 'recoveries' | 'receivables' | 'analytics' | 'workflows' | 'audit-trail' | 'agent-operations' | 'settings';
 
 type DashboardOverviewProps = {
   section: DashboardSection;
@@ -51,6 +52,7 @@ const sectionLabel: Record<DashboardSection, string> = {
   overview: 'Dashboard',
   payments: 'Payments',
   recoveries: 'Recoveries',
+  receivables: 'Receivables',
   analytics: 'Analytics',
   workflows: 'Workflows',
   'audit-trail': 'Audit Trail',
@@ -256,6 +258,20 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
   const periodDays = useDashboardStore((state) => state.periodDays);
   const setPeriod = useDashboardStore((state) => state.setPeriod);
   const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('sidebar_open');
+    if (saved !== null) setSidebarOpen(saved === 'true');
+  }, []);
+
+  const toggleSidebar = () => {
+    setSidebarOpen((current) => {
+      const next = !current;
+      localStorage.setItem('sidebar_open', JSON.stringify(next));
+      return next;
+    });
+  };
 
   const agentStages: AgentStage[] = [
     {
@@ -696,47 +712,55 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
         </div>
       </header>
 
-      <div className="dashboard-shell">
+      <div className={`dashboard-shell ${sidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
         <aside className="dashboard-sidebar" aria-label="Sidebar navigation">
           <div className="dashboard-sidebar-group">
             <a href="#/dashboard/overview" className={`dashboard-sidebar-item ${section === 'overview' ? 'active' : ''}`}>
               <LayoutDashboard size={18} />
-              <span>Dashboard</span>
+              <span className="dashboard-sidebar-text">Dashboard</span>
               {section === 'overview' && <span className="dashboard-sidebar-dot" aria-hidden="true" />}
             </a>
             <a href="#/dashboard/payments" className={`dashboard-sidebar-item ${section === 'payments' ? 'active' : ''}`}>
               <Wallet size={18} />
-              <span>Payments</span>
+              <span className="dashboard-sidebar-text">Payments</span>
             </a>
             <a href="#/dashboard/recoveries" className={`dashboard-sidebar-item ${section === 'recoveries' ? 'active' : ''}`}>
               <RefreshCw size={18} />
-              <span>Recoveries</span>
+              <span className="dashboard-sidebar-text">Recoveries</span>
+            </a>
+            <a href="#/receivables" className={`dashboard-sidebar-item ${section === 'receivables' ? 'active' : ''}`}>
+              <Wallet size={18} />
+              <span className="dashboard-sidebar-text">Receivables</span>
             </a>
             <a href="#/dashboard/analytics" className={`dashboard-sidebar-item ${section === 'analytics' ? 'active' : ''}`}>
               <Grid3x3 size={18} />
-              <span>Analytics</span>
+              <span className="dashboard-sidebar-text">Analytics</span>
             </a>
             <a href="#/dashboard/workflows" className={`dashboard-sidebar-item ${section === 'workflows' ? 'active' : ''}`}>
               <Grid3x3 size={18} />
-              <span>Workflows</span>
+              <span className="dashboard-sidebar-text">Workflows</span>
             </a>
             <a href="#/dashboard/audit-trail" className={`dashboard-sidebar-item ${section === 'audit-trail' ? 'active' : ''}`}>
               <Grid3x3 size={18} />
-              <span>Audit Trail</span>
+              <span className="dashboard-sidebar-text">Audit Trail</span>
             </a>
             <a href="#/dashboard/agent-operations" className={`dashboard-sidebar-item ${section === 'agent-operations' ? 'active' : ''}`}>
               <RefreshCw size={18} />
-              <span>Agent Operations</span>
+              <span className="dashboard-sidebar-text">Agent Operations</span>
             </a>
             <a href="#/dashboard/settings" className={`dashboard-sidebar-item ${section === 'settings' ? 'active' : ''}`}>
               <Settings size={18} />
-              <span>Settings</span>
+              <span className="dashboard-sidebar-text">Settings</span>
             </a>
           </div>
 
+          <button type="button" className="dashboard-sidebar-toggle" onClick={toggleSidebar} aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}>
+            {sidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+            <span className="dashboard-sidebar-text">{sidebarOpen ? 'Collapse' : 'Expand'}</span>
+          </button>
           <button type="button" className="dashboard-sidebar-logout" onClick={() => { window.location.hash = '#/'; }}>
             <LogOut size={18} />
-            <span>Logout</span>
+            <span className="dashboard-sidebar-text">Logout</span>
           </button>
         </aside>
 

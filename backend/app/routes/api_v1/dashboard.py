@@ -80,6 +80,7 @@ async def get_overview(
                 "action": action,
                 "amount": f"{_rupees(recovery.recovered_amount_paise):,.0f} recovered",
                 "time": _relative(recovery.updated_at),
+                "icon": "Sparkles",
                 "payment_id": payment.id,
             }
         )
@@ -144,6 +145,41 @@ async def get_journey(
         generated_at=datetime.now(timezone.utc),
     ).model_dump(mode="json")
     return success(data, agents=["ExecutorAgent"], latency_ms=elapsed_ms(started))
+
+
+@router.get("/metrics-summary", dependencies=[Depends(require_api_key)])
+async def get_metrics_summary(
+    request: Request,
+    period: str = Query(default="current"),
+    db: Session = Depends(get_db),
+) -> dict:
+    started = measure()
+    days = 30 if period == "monthly" else 7
+    cutoff = utcnow() - timedelta(days=days)
+    payments = db.query(PaymentRecord).filter(PaymentRecord.created_at >= cutoff).all()
+    recoveries = db.query(RecoveryRecord).filter(RecoveryRecord.created_at >= cutoff).all()
+    recovered = [item for item in recoveries if item.status == RecoveryStatus.SUCCEEDED.value]
+    recovered_count = len(recovered)
+    total_recovered = sum(item.recovered_amount_paise for item in recovered)
+
+    def strategy_total(strategy: str) -> float:
+        return round(sum(item.recovered_amount_paise for item in recovered if item.strategy == strategy) / 100, 2)
+
+    data = {
+        "period": period,
+        "total_payments": len(payments),
+        "total_payments_change": 0,
+        "recovery_rate": round(recovered_count / len(payments) * 100, 1) if payments else 0.0,
+        "recovery_target": 60.0,
+        "total_recovered": round(total_recovered / 100, 2),
+        "weekly_change": 0.0,
+        "avg_cost_per_recovery": round(sum(item.cost_paise for item in recovered) / recovered_count / 100, 2) if recovered_count else 0.0,
+        "retry_recovered": strategy_total("smart_retry"),
+        "sms_recovered": strategy_total("nudge_digital"),
+        "call_recovered": strategy_total("high_touch_voice"),
+        "timestamp": utcnow(),
+    }
+    return success(data, agents=["AuditSupervisor"], latency_ms=elapsed_ms(started))
 
 
 @router.get("/agents-status", dependencies=[Depends(require_api_key)])

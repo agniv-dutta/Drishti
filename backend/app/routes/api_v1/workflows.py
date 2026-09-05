@@ -8,11 +8,12 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 
 from app.core.responses import elapsed_ms, error, measure, success
+from app.core.security import require_api_key
 from app.database.models import PaymentRecord, RecoveryWorkflow
 from app.database.session import get_db
 from app.schemas.workflow_schemas import WorkflowCreateRequest, WorkflowStepPayload
 
-router = APIRouter(prefix="/workflows", tags=["workflows"])
+router = APIRouter(prefix="/workflows", tags=["workflows"], dependencies=[Depends(require_api_key)])
 
 BUILTIN_TEMPLATES = [
     {

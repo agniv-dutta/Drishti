@@ -11,11 +11,12 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 
 from app.core.responses import elapsed_ms, error, measure, success
+from app.core.security import require_api_key
 from app.database.models import AuditRecord
 from app.database.session import get_db
 from app.models.audit import AuditSeverity
 
-router = APIRouter(prefix="/audit", tags=["audit"])
+router = APIRouter(prefix="/audit", tags=["audit"], dependencies=[Depends(require_api_key)])
 
 
 def _serialize(row: AuditRecord) -> Dict[str, Any]:

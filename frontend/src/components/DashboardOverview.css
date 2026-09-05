@@ -107,6 +107,11 @@
   display: grid;
   grid-template-columns: 270px minmax(0, 1fr) 308px;
   min-height: calc(100vh - 70px);
+  transition: grid-template-columns 0.25s ease;
+}
+
+.dashboard-shell.sidebar-collapsed {
+  grid-template-columns: 72px minmax(0, 1fr) 308px;
 }
 
 .dashboard-sidebar {
@@ -125,7 +130,8 @@
 }
 
 .dashboard-sidebar-item,
-.dashboard-sidebar-logout {
+.dashboard-sidebar-logout,
+.dashboard-sidebar-toggle {
   width: 100%;
   min-height: 56px;
   padding: 0 18px;
@@ -168,6 +174,33 @@
   height: 8px;
   border-radius: 999px;
   background: #24103f;
+}
+
+.dashboard-sidebar-toggle {
+  margin-top: auto;
+  color: rgba(247, 240, 234, 0.88);
+}
+
+.dashboard-sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.dashboard-shell.sidebar-collapsed .dashboard-sidebar {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.dashboard-shell.sidebar-collapsed .dashboard-sidebar-item,
+.dashboard-shell.sidebar-collapsed .dashboard-sidebar-logout,
+.dashboard-shell.sidebar-collapsed .dashboard-sidebar-toggle {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.dashboard-shell.sidebar-collapsed .dashboard-sidebar-text,
+.dashboard-shell.sidebar-collapsed .dashboard-sidebar-dot {
+  display: none;
 }
 
 .dashboard-sidebar-logout {

@@ -23,13 +23,14 @@ from app.core.config import get_settings
 from app.core.logging_config import configure_logging, get_logger
 from app.database.session import dispose_db, init_db
 from app.utils.formatters import error_response
-from app.routes import agents, health, metrics, payment, razorpay, recovery, triage, verity
+from app.routes import agents, dashboard, health, metrics, payment, razorpay, recovery, triage, verity
 from app.routes.api_v1 import (
     agents as agents_v1,
     analytics,
     audit as audit_v1,
     dashboard as dashboard_v1,
     payments,
+    receivables,
     recoveries,
     workflows as workflows_v1,
 )
@@ -130,6 +131,7 @@ def create_app() -> FastAPI:
     api = settings.api_v1_prefix
     application.include_router(health.router)
     application.include_router(payment.router, prefix=api)
+    application.include_router(dashboard.router, prefix=api)
     application.include_router(razorpay.router)
     application.include_router(recovery.router, prefix=api)
     application.include_router(verity.router, prefix=api)
@@ -142,6 +144,7 @@ def create_app() -> FastAPI:
     # Canonical v1 REST API (clean, resource-oriented, unified envelope).
     application.include_router(dashboard_v1.router, prefix=api)
     application.include_router(payments.router, prefix=api)
+    application.include_router(receivables.router, prefix=api)
     application.include_router(recoveries.router, prefix=api)
     application.include_router(agents_v1.router, prefix=api)
     application.include_router(audit_v1.router, prefix=api)

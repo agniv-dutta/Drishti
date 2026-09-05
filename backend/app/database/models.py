@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import (
@@ -267,6 +267,72 @@ class RecoveryRecord(Base):
             self.completed_at = result.completed_at
         else:
             self.status = RecoveryStatus.FAILED.value
+
+
+# ---------------------------------------------------------------------------
+# B2B receivables
+# ---------------------------------------------------------------------------
+
+class BillingInvoice(Base):
+    """B2B invoice tracked by the receivables recovery workflow."""
+
+    __tablename__ = "billing_invoices"
+    __table_args__ = (
+        Index("ix_billing_invoices_merchant_status", "merchant_id", "status"),
+        Index("ix_billing_invoices_due_date", "due_date"),
+    )
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    merchant_id: Mapped[str] = mapped_column(String(64), index=True)
+    customer_id: Mapped[str] = mapped_column(String(64), index=True)
+    customer_name: Mapped[str] = mapped_column(String(200))
+    customer_contact_name: Mapped[str] = mapped_column(String(120), default="Accounts Payable")
+    customer_email: Mapped[str] = mapped_column(String(200))
+    invoice_number: Mapped[str] = mapped_column(String(80), unique=True, index=True)
+    amount: Mapped[float] = mapped_column(Float)
+    issue_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    due_date: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    days_overdue: Mapped[int] = mapped_column(Integer, default=0)
+    payment_terms: Mapped[str] = mapped_column(String(40), default="Net 30")
+    status: Mapped[str] = mapped_column(String(24), default="draft", index=True)
+    last_reminder: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    reminder_count: Mapped[int] = mapped_column(Integer, default=0)
+    promise_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    promise_amount: Mapped[Optional[float]] = mapped_column(Float)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    def refresh_days_overdue(self, now: Optional[datetime] = None) -> int:
+        current = now or utcnow()
+        due = self.due_date if self.due_date.tzinfo else self.due_date.replace(tzinfo=timezone.utc)
+        self.days_overdue = max((current - due).days, 0) if self.status not in {"paid", "draft"} else 0
+        return self.days_overdue
+
+
+class BillingReminderLog(Base):
+    """Immutable history of reminders sent for an invoice."""
+
+    __tablename__ = "billing_reminder_logs"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    invoice_id: Mapped[str] = mapped_column(ForeignKey("billing_invoices.id"), index=True)
+    sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    template: Mapped[str] = mapped_column(String(32))
+    status: Mapped[str] = mapped_column(String(20), default="sent")
+    provider_reference: Mapped[Optional[str]] = mapped_column(String(128))
+
+
+class BillingPaymentPromise(Base):
+    """Payment promise captured from a B2B customer."""
+
+    __tablename__ = "billing_payment_promises"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    invoice_id: Mapped[str] = mapped_column(ForeignKey("billing_invoices.id"), index=True)
+    promised_date: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    promised_amount: Mapped[float] = mapped_column(Float)
+    status: Mapped[str] = mapped_column(String(20), default="open")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 # ---------------------------------------------------------------------------

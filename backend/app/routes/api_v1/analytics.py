@@ -10,6 +10,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.responses import elapsed_ms, measure, success
+from app.core.security import require_api_key
 from app.database.models import PaymentRecord, RecoveryRecord
 from app.database.session import get_db
 from app.metrics.collector import MetricsCollector
@@ -17,7 +18,7 @@ from app.models.payment import utcnow
 from app.models.recovery import RecoveryStatus
 from app.utils.formatters import paise_to_rupees
 
-router = APIRouter(prefix="/analytics", tags=["analytics"])
+router = APIRouter(prefix="/analytics", tags=["analytics"], dependencies=[Depends(require_api_key)])
 
 collector = MetricsCollector()
 

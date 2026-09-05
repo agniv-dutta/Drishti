@@ -19,12 +19,6 @@ from app.models.recovery import RecoveryStatus
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
-
-def _auth() -> None:
-    from fastapi import Depends
-
-    return Depends(require_api_key)
-
 AGENTS = [
     {"key": "analyzer", "name": "PaymentAnalyzer", "description": "Failure cause detection and risk scoring"},
     {"key": "strategist", "name": "StrategySelector", "description": "Recovery strategy and channel selection"},
@@ -38,7 +32,7 @@ def _recovery_counts(db: Session) -> dict:
     return statuses
 
 
-@router.get("/status")
+@router.get("/status", dependencies=[Depends(require_api_key)])
 async def agent_status(db: Session = Depends(get_db)) -> dict:
     started = measure()
     counts = _recovery_counts(db)
@@ -65,7 +59,7 @@ async def agent_status(db: Session = Depends(get_db)) -> dict:
     return success(data, agents=[a["name"] for a in AGENTS], latency_ms=elapsed_ms(started))
 
 
-@router.get("/operations")
+@router.get("/operations", dependencies=[Depends(require_api_key)])
 async def agent_operations(
     limit: int = Query(default=10, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -98,7 +92,7 @@ async def agent_operations(
     return success(data, agents=[a["name"] for a in AGENTS], latency_ms=elapsed_ms(started))
 
 
-@router.post("/batch-process")
+@router.post("/batch-process", dependencies=[Depends(require_api_key)])
 async def batch_process(
     request: Request,
     payment_ids: Optional[List[str]] = None,
@@ -141,7 +135,7 @@ async def batch_process(
     return success(data, agents=["SupervisorAgent", "PaymentAnalyzer"], latency_ms=elapsed_ms(started))
 
 
-@router.get("/decisions/{payment_id}")
+@router.get("/decisions/{payment_id}", dependencies=[Depends(require_api_key)])
 async def agent_decisions(
     payment_id: str,
     request: Request,

@@ -46,13 +46,15 @@ export const dashboardAPI = {
         limit,
         period_days: periodDays,
       },
-    }),
+    }).then((response) => ({ ...response, data: (response.data as { data?: unknown }).data ?? response.data })),
 
   getJourney: (paymentId: string) =>
-    apiClient.get<unknown>(`/dashboard/journey/${paymentId}`),
+    apiClient.get<unknown>(`/dashboard/journey/${paymentId}`)
+      .then((response) => ({ ...response, data: (response.data as { data?: unknown }).data ?? response.data })),
 
   getMetricsSummary: (period: 'current' | 'monthly' = 'current') =>
-    apiClient.get<PerformanceMetrics>('/dashboard/metrics-summary', { params: { period } }),
+    apiClient.get<{ data: PerformanceMetrics }>('/dashboard/metrics-summary', { params: { period } })
+      .then((response) => ({ ...response, data: response.data.data })),
 };
 
 export type PerformanceMetrics = {
@@ -99,6 +101,52 @@ export const metricsAPI = {
   getRecoveryRate: () => apiClient.get<{ rate: number; target: number }>('/metrics/recovery-rate'),
 
   getRecovered: () => apiClient.get<{ amount: number; currency: string }>('/metrics/total-recovered'),
+};
+
+export type ReceivablesInvoice = {
+  id: string;
+  invoice_number: string;
+  customer_name: string;
+  contact_name: string;
+  customer_email: string;
+  amount: number;
+  due_date: string;
+  days_overdue: number;
+  payment_terms: string;
+  status: string;
+  reminder_count: number;
+  last_reminder: string | null;
+  risk_score: number;
+  recommended_action: string;
+  reminders: Array<{ id: string; sent_at: string; template: string; status: string }>;
+  payment_promises: Array<{ id: string; promised_date: string; promised_amount: number; status: string }>;
+};
+
+export type DsoMetrics = {
+  dso: number;
+  benchmark: number;
+  improvement: string;
+  overdue_invoices: number;
+  total_overdue_amount: number;
+  total_accounts_receivable: number;
+  total_sales_period: number;
+};
+
+const unwrap = <T>(response: { data: { data?: T } | T }): T => {
+  const body = response.data;
+  return (body && typeof body === 'object' && 'data' in body ? body.data : body) as T;
+};
+
+export const receivablesAPI = {
+  list: (merchantId: string, sortBy: 'amount' | 'days_overdue' | 'due_date', descending = true) =>
+    apiClient.get<{ data: { invoices: ReceivablesInvoice[] } }>('/recovery/b2b/invoices', {
+      params: { merchant_id: merchantId, sort_by: sortBy, descending },
+    }).then((response) => unwrap(response)),
+  dso: (merchantId: string) =>
+    apiClient.get<{ data: DsoMetrics }>('/recovery/b2b/dso-tracker', { params: { merchant_id: merchantId } })
+      .then((response) => unwrap(response)),
+  sendReminder: (invoiceId: string) =>
+    apiClient.post('/recovery/b2b/send-reminder', null, { params: { invoice_id: invoiceId } }),
 };
 
 export default apiClient;
