@@ -1,6 +1,7 @@
 """Agent layer: analyzer, strategist, executor, supervisor."""
 
 from app.agents.base_agent import BaseAgent  # noqa: F401
+from app.agents.groq_advisor import GroqAdvisor  # noqa: F401
 from app.agents.analyzer_agent import AnalyzerAgent  # noqa: F401
 from app.agents.payment_analyzer import AnalysisResult, PaymentAnalyzerAgent  # noqa: F401
 from app.agents.execution_orchestrator import ExecutionOrchestratorAgent, ExecutionResult  # noqa: F401

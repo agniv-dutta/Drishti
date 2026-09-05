@@ -29,6 +29,7 @@ from app.routes.api_v1 import (
     analytics,
     audit as audit_v1,
     dashboard as dashboard_v1,
+    groq as groq_v1,
     mandates,
     payments,
     promise_to_pay,
@@ -165,6 +166,7 @@ def create_app() -> FastAPI:
     application.include_router(audit_v1.router, prefix=api)
     application.include_router(analytics.router, prefix=api)
     application.include_router(workflows_v1.router, prefix=api)
+    application.include_router(groq_v1.router, prefix=api)
 
     logger.info("app.created", routes=len(application.routes))
     return application

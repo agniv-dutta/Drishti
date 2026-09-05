@@ -15,6 +15,7 @@ import {
 } from 'recharts';
 import { Activity, AlertTriangle, Bell, ChevronDown, ChevronLeft, ChevronRight, Clock3, Grid3x3, LayoutDashboard, LogOut, RefreshCw, Settings, Wallet } from 'lucide-react';
 import { metricsAPI } from '../services/api';
+import { AnomalyExplainer } from './AiNativeComponents';
 import './AnalyticsDashboard.css';
 
 type AnalyticsSummary = {
@@ -245,6 +246,18 @@ const AnalyticsDashboard: React.FC = () => {
           <section className="analytics-kpis"><article><span>Recovery rate</span><strong>{percent(recoveryRate)}</strong><small className="up">+6.4% vs prior period</small></article><article><span>Revenue recovered</span><strong>{currency(recovered * 450)}</strong><small>{recovered} successful payments</small></article><article><span>Avg cost / recovery</span><strong>{currency(summary.cost_per_recovery_inr || 420)}</strong><small>-19% vs prior period</small></article><article><span>Time to recovery</span><strong>{period <= 7 ? '4h 18m' : period <= 30 ? '6h 42m' : '8h 15m'}</strong><small>Median, all strategies</small></article></section>
 
           {visibleAlerts.length > 0 && <section className="analytics-alerts" aria-label="Alerts">{visibleAlerts.map((alert) => <div className={`analytics-alert ${alert.tone}`} key={alert.text}>{alert.icon}<span>{alert.text}</span><button type="button" aria-label={`Dismiss ${alert.text}`} onClick={() => setDismissedAlerts((current) => [...current, alert.text])}>×</button></div>)}</section>}
+
+          <AnomalyExplainer
+            anomaly={recoveryRate < 0.5 ? 'Recovery rate below target' : 'Strategy mix shifted this period'}
+            context={{
+              period_days: period,
+              recovery_rate: recoveryRate,
+              payments_attempted: total,
+              payments_recovered: recovered,
+              model_drift_score: summary.model_drift_score,
+              strategy_recoveries: summary.strategy_recoveries ?? {},
+            }}
+          />
 
           <section className="analytics-grid analytics-grid-top"><article className="analytics-panel funnel-panel"><div className="panel-heading"><div><p className="panel-kicker">Drop-off analysis</p><h2>Recovery funnel</h2></div><span>Last {period} days</span></div><ResponsiveContainer width="100%" height={240}><BarChart layout="vertical" data={funnel} margin={{ left: 18, right: 28 }}><CartesianGrid horizontal={false} stroke="#2D2D4A" /><XAxis type="number" hide /><YAxis type="category" dataKey="label" width={120} tick={{ fill: '#A0A0B0', fontSize: 12 }} axisLine={false} tickLine={false} /><Tooltip cursor={{ fill: '#2D2D4A' }} formatter={(value) => [value, 'payments']} /><Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>{funnel.map((entry) => <Cell key={entry.label} fill={entry.fill} />)}</Bar></BarChart></ResponsiveContainer></article><article className="analytics-panel"><div className="panel-heading"><div><p className="panel-kicker">Conversion by play</p><h2>Strategy performance</h2></div><span>Success rate</span></div><ResponsiveContainer width="100%" height={240}><BarChart data={strategies} margin={{ top: 12, right: 4, left: -22 }}><CartesianGrid vertical={false} stroke="#2D2D4A" /><XAxis dataKey="name" tick={{ fill: '#A0A0B0', fontSize: 12 }} axisLine={false} tickLine={false} /><YAxis domain={[0, 80]} tickFormatter={(value) => `${value}%`} tick={{ fill: '#A0A0B0', fontSize: 12 }} axisLine={false} tickLine={false} /><Tooltip formatter={(value) => [`${value}%`, 'success']} /><Bar dataKey="success" fill="#FF6B54" radius={[4, 4, 0, 0]} barSize={34} /></BarChart></ResponsiveContainer></article></section>
 

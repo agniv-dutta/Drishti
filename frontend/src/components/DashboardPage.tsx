@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useDashboardStore } from '../store/dashboardStore';
 import type { DashboardJourneyNode } from '../types/dashboard';
+import { ComplianceCheck, CustomerIntentPrediction, PersonalizedMessagePreview } from './AiNativeComponents';
 import './DashboardPage.css';
 
 const fallbackNodes: DashboardJourneyNode[] = [
@@ -144,6 +145,8 @@ const DashboardPage: React.FC<{ paymentId?: string | null }> = ({ paymentId }) =
   const journeyNodes = journey?.nodes.length ? journey.nodes : fallbackNodes;
   const currentJourney = journey ?? null;
   const chargebackRisk = currentJourney?.chargebackRisk ?? null;
+  const focusedPaymentId = paymentId ?? selectedPaymentId ?? payments[0]?.id;
+  const focusedPayment = payments.find((payment) => payment.id === focusedPaymentId);
   const activeNode = useMemo(
     () => journeyNodes.find((node) => node.id === hoveredId) ?? null,
     [hoveredId, journeyNodes],
@@ -278,6 +281,25 @@ const DashboardPage: React.FC<{ paymentId?: string | null }> = ({ paymentId }) =
                 Flag for manual review. The merchant team should monitor this payment closely.
               </div>
             )}
+          </section>
+        )}
+
+        {focusedPaymentId && (
+          <section className="journey-ai-grid" aria-label="AI recovery controls">
+            <div>
+              <PersonalizedMessagePreview
+                paymentId={focusedPaymentId}
+                strategy={focusedPayment?.strategyUsed ?? 'sms_link'}
+              />
+            </div>
+            <div className="journey-ai-side">
+              <CustomerIntentPrediction paymentId={focusedPaymentId} />
+              <ComplianceCheck
+                paymentId={focusedPaymentId}
+                strategy={focusedPayment?.strategyUsed ?? 'sms_link'}
+                action="send_sms"
+              />
+            </div>
           </section>
         )}
 

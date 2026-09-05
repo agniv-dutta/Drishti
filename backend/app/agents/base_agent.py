@@ -97,14 +97,16 @@ class BaseAgent(ABC):
                 api_key=settings.groq_api_key,
                 base_url="https://api.groq.com/openai/v1",
             )
-            response = client.responses.create(
+            response = client.chat.completions.create(
                 model=settings.groq_model,
-                max_output_tokens=settings.llm_max_tokens,
-                instructions=system,
-                input=prompt,
+                max_tokens=settings.llm_max_tokens,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": prompt},
+                ],
                 temperature=settings.llm_temperature,
             )
-            text = getattr(response, "output_text", None) or ""
+            text = response.choices[0].message.content if response.choices else ""
             self.log.info(
                 "llm.complete",
                 model=settings.groq_model,

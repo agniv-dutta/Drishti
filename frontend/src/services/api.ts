@@ -153,6 +153,56 @@ export const recoveryAPI = {
   execute: (recoveryId: string) => apiClient.post(`/recovery/${recoveryId}/execute`, {}),
 };
 
+export type MerchantAdvisorMetrics = Record<string, unknown>;
+
+export type StrategySuggestion = {
+  suggested_strategy: string;
+  rationale: string;
+  expected_success_rate: number;
+  improvement_vs_current: string;
+  offer_details: Record<string, unknown>;
+  timing: string;
+  confidence: number;
+  current_strategy?: string;
+};
+
+export type ComplianceResult = {
+  compliance_approved: boolean;
+  regulation: string;
+  precautions: string[];
+  risks: string[];
+  recommended_action: string;
+};
+
+export type IntentPrediction = {
+  will_self_recover: boolean;
+  recovery_probability: number;
+  expected_time_hours: number;
+  reasoning: string;
+  recommendation: string;
+};
+
+export const aiAPI = {
+  merchantAdvisor: (merchantId: string, metrics: MerchantAdvisorMetrics = {}) =>
+    apiClient.post<{ data: { advice: string; model: string } }>('/groq/merchant-advisor', metrics, { params: { merchant_id: merchantId } })
+      .then((response) => unwrap(response)),
+  optimizeStrategy: (paymentId: string) =>
+    apiClient.post<{ data: StrategySuggestion }>('/groq/strategy-optimization', null, { params: { payment_id: paymentId } })
+      .then((response) => unwrap(response)),
+  checkCompliance: (paymentId: string, strategy: string, action: string) =>
+    apiClient.post<{ data: ComplianceResult }>('/groq/compliance-check', null, { params: { payment_id: paymentId, strategy, action } })
+      .then((response) => unwrap(response)),
+  predictIntent: (paymentId: string) =>
+    apiClient.post<{ data: { recommendation: string; prediction: IntentPrediction } }>('/groq/predict-intent', null, { params: { payment_id: paymentId } })
+      .then((response) => unwrap(response)),
+  personalizeMessage: (paymentId: string, strategy: string) =>
+    apiClient.post<{ data: { personalized_message: string; character_count: number } }>('/groq/personalize-message', null, { params: { payment_id: paymentId, strategy } })
+      .then((response) => unwrap(response)),
+  explainAnomaly: (anomaly: string, context: Record<string, unknown>) =>
+    apiClient.post<{ data: { explanation: string; context: Record<string, unknown> } }>('/groq/explain-anomaly', context, { params: { anomaly } })
+      .then((response) => unwrap(response)),
+};
+
 export const workflowAPI = {
   list: () => apiClient.get<{ workflows: Workflow[] }>('/workflows')
     .then((response) => unwrap(response)),

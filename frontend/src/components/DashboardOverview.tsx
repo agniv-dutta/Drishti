@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useDashboardStore } from '../store/dashboardStore';
 import type { DashboardActivityItem, Payment } from '../types/dashboard';
+import { CustomerIntentPrediction, MerchantAdvisor, PersonalizedMessagePreview, StrategyOptimizer } from './AiNativeComponents';
 
 import './DashboardOverview.css';
 
@@ -939,6 +940,19 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
                 ))}
               </section>
 
+              <section className="ai-dashboard-grid" aria-label="AI decision support">
+                <MerchantAdvisor
+                  merchantId="default"
+                  metrics={{
+                    recovery_rate: recoveryRate,
+                    total_recovered: totalRecovered,
+                    total_payments: totalPaymentsProcessed,
+                    period_days: periodDays,
+                  }}
+                />
+                {tableRows[0] && <CustomerIntentPrediction paymentId={tableRows[0].id} />}
+              </section>
+
               <section className="dashboard-agents-panel" aria-label="AI Agent Operations">
                 <div className="dashboard-section-head">
                   <h2>AI Agents in Action</h2>
@@ -1229,6 +1243,16 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
                 <span>AI strategy selection with confidence levels</span>
               </div>
 
+              {tableRows[0] && (
+                <div className="ai-payments-stack">
+                  <div>
+                    <StrategyOptimizer paymentId={tableRows[0].id} currentStrategy={tableRows[0].strategyUsed} />
+                    <PersonalizedMessagePreview paymentId={tableRows[0].id} strategy={tableRows[0].strategyUsed} />
+                  </div>
+                  <CustomerIntentPrediction paymentId={tableRows[0].id} />
+                </div>
+              )}
+
               <div className="payments-list-container">
                 {tableRows.slice(0, 5).map((payment) => {
                   const confidence = payment.recoveredAmount > 0 ? Math.min(95, 65 + payment.recoveredAmount / payment.amount * 35) : 58;
@@ -1272,6 +1296,12 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
                 <h2>AI-Powered Recoveries</h2>
                 <span>Full transparency into AI decision-making and model learning</span>
               </div>
+
+              {recoveryRows[0] && (
+                <div className="recoveries-ai-panel">
+                  <StrategyOptimizer paymentId={recoveryRows[0].paymentId} currentStrategy={recoveryRows[0].strategy} />
+                </div>
+              )}
 
               <div className="recoveries-table-container">
                 <table className="recoveries-table">
