@@ -52,12 +52,19 @@ async def lifespan(_: FastAPI):
         version=settings.version,
     )
     init_db()
+
+    # Start background live data generator (synthetic metrics for demo)
+    from app.services.live_data import live_data
+    live_data.start()
+    logger.info("liv_data.started")
+
     logger.info("startup.complete", docs_url="/docs")
     try:
         yield
     except asyncio.CancelledError:
         logger.info("shutdown.cancelled")
     finally:
+        await live_data.stop()
         dispose_db()
         logger.info("shutdown.complete")
 

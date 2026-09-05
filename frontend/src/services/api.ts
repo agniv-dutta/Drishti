@@ -55,6 +55,69 @@ export const dashboardAPI = {
   getMetricsSummary: (period: 'current' | 'monthly' = 'current') =>
     apiClient.get<{ data: PerformanceMetrics }>('/dashboard/metrics-summary', { params: { period } })
       .then((response) => ({ ...response, data: response.data.data })),
+
+  getLiveMetrics: () =>
+    apiClient.get<{ data: LiveDashboardMetrics }>('/dashboard/live-metrics')
+      .then((response) => response.data.data),
+
+  getLiveAgentStatus: () =>
+    apiClient.get<{ data: LiveAgentStatus }>('/dashboard/live-agent-status')
+      .then((response) => response.data.data),
+
+  getLivePayments: (limit = 50) =>
+    apiClient.get<{ data: LivePaymentsResponse }>('/dashboard/live-payments', { params: { limit } })
+      .then((response) => response.data.data),
+};
+
+export type LiveDashboardMetrics = {
+  total_payments: number;
+  recovery_rate: number;
+  total_recovered: number;
+  avg_cost_per_recovery: number;
+  recovered_count: number;
+  failed_count: number;
+  in_progress_count: number;
+  escalated_count: number;
+  generated_at: string;
+};
+
+export type LiveAgentStatus = {
+  generated_at: string;
+  pipeline: {
+    total: number;
+    recovered: number;
+    failed: number;
+    recovery_rate: number;
+  };
+  agents: Array<{
+    name: string;
+    label: string;
+    progress: number;
+    status: string;
+    queue: number;
+    processed: number;
+    total: number;
+    latency_ms: number;
+  }>;
+};
+
+export type LivePayment = {
+  id: string;
+  amount: number;
+  failure_reason: string;
+  customer_segment: string;
+  created_at: string;
+  strategy_used: string;
+  status: 'failed' | 'recovered' | 'in_progress' | 'escalated';
+  money_recovered: number;
+  confidence: number;
+  ai_model_confidence: number;
+};
+
+export type LivePaymentsResponse = {
+  total: number;
+  payments: LivePayment[];
+  timestamp: string;
 };
 
 export type PerformanceMetrics = {

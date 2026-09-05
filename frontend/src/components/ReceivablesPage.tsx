@@ -9,6 +9,43 @@ const merchantId = import.meta.env.VITE_MERCHANT_ID || 'demo-merchant';
 const currency = (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value);
 const dateLabel = (value: string) => new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value));
 
+const demoInvoices: ReceivablesInvoice[] = [
+  {
+    id: 'inv_demo_001', invoice_number: 'INV-2048', customer_name: 'Aster Labs', contact_name: 'Riya Mehta',
+    customer_email: 'finance@asterlabs.in', amount: 185000, due_date: '2026-08-20', days_overdue: 16,
+    payment_terms: 'Net 30', status: 'overdue', reminder_count: 1, last_reminder: '2026-09-02', risk_score: 0.38,
+    recommended_action: 'remind', reminders: [], payment_promises: [],
+  },
+  {
+    id: 'inv_demo_002', invoice_number: 'INV-2042', customer_name: 'Northstar Retail', contact_name: 'Arjun Rao',
+    customer_email: 'ops@northstarretail.in', amount: 420000, due_date: '2026-08-08', days_overdue: 28,
+    payment_terms: 'Net 30', status: 'disputed', reminder_count: 2, last_reminder: '2026-09-01', risk_score: 0.72,
+    recommended_action: 'escalate', reminders: [], payment_promises: [],
+  },
+  {
+    id: 'inv_demo_003', invoice_number: 'INV-2037', customer_name: 'Kite Mobility', contact_name: 'Neha Shah',
+    customer_email: 'accounts@kitemobility.in', amount: 96000, due_date: '2026-08-28', days_overdue: 8,
+    payment_terms: 'Net 15', status: 'overdue', reminder_count: 0, last_reminder: null, risk_score: 0.24,
+    recommended_action: 'remind', reminders: [], payment_promises: [{ id: 'promise_demo_003', promised_date: '2026-09-10', promised_amount: 96000, status: 'open' }],
+  },
+  {
+    id: 'inv_demo_004', invoice_number: 'INV-2029', customer_name: 'Verde Health', contact_name: 'Kabir Sen',
+    customer_email: 'billing@verdehealth.in', amount: 275000, due_date: '2026-07-30', days_overdue: 37,
+    payment_terms: 'Net 30', status: 'overdue', reminder_count: 3, last_reminder: '2026-08-30', risk_score: 0.86,
+    recommended_action: 'escalate', reminders: [], payment_promises: [],
+  },
+];
+
+const demoDso: DsoMetrics = {
+  dso: 42,
+  benchmark: 45,
+  improvement: '3 days below benchmark',
+  overdue_invoices: demoInvoices.length,
+  total_overdue_amount: demoInvoices.reduce((total, invoice) => total + invoice.amount, 0),
+  total_accounts_receivable: 1840000,
+  total_sales_period: 4380000,
+};
+
 const ReceivablesPage: React.FC = () => {
   const [invoices, setInvoices] = useState<ReceivablesInvoice[]>([]);
   const [dso, setDso] = useState<DsoMetrics | null>(null);
@@ -35,8 +72,9 @@ const ReceivablesPage: React.FC = () => {
     setError(null);
     Promise.all([receivablesAPI.list(merchantId, sortKey, descending), receivablesAPI.dso(merchantId)])
       .then(([invoiceData, dsoData]) => {
-        setInvoices(invoiceData.invoices);
-        setDso(dsoData);
+        const hasLiveInvoices = invoiceData.invoices.length > 0;
+        setInvoices(hasLiveInvoices ? invoiceData.invoices : demoInvoices);
+        setDso(hasLiveInvoices ? dsoData : demoDso);
       })
       .catch(() => setError('Receivables data is temporarily unavailable.'))
       .finally(() => setLoading(false));
@@ -61,75 +99,75 @@ const ReceivablesPage: React.FC = () => {
   };
 
   return (
-    <div className="dashboard-page">
-      <header className="dashboard-topbar">
-        <a href="#/" className="dashboard-brand" aria-label="Back to home">
+    <div className="receivables-page">
+      <header className="receivables-topbar">
+        <a href="#/" className="receivables-brand" aria-label="Back to home">
           <span className="dashboard-brand-mark" aria-hidden="true">D</span>
           <span className="dashboard-brand-name">Drishti</span>
         </a>
-        <nav className="dashboard-nav">
+        <nav aria-label="Primary">
           <a href="#/page/platform">Platform</a>
           <a href="#/page/solutions">Solutions</a>
           <a href="#/page/integrations">Integrations</a>
           <a href="#/page/company">Company</a>
         </nav>
-        <div className="dashboard-top-actions">
-          <a href="#/page/client-login" className="dashboard-login-link">Client Login</a>
-          <a href="#/page/get-started" className="dashboard-primary-action">Get Started</a>
+        <div>
+          <a href="#/page/client-login" className="receivables-login">Client Login</a>
+          <a href="#/page/get-started" className="receivables-login">Get Started</a>
         </div>
       </header>
 
-      <div className={`dashboard-shell ${sidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
-        <aside className="dashboard-sidebar" aria-label="Sidebar navigation">
-          <div className="dashboard-sidebar-group">
-            <a href="#/dashboard/overview" className="dashboard-sidebar-item">
+      <div className="receivables-layout">
+        <aside className="receivables-sidebar" aria-label="Sidebar navigation">
+          <div className="receivables-sidebar-group">
+            <a href="#/dashboard/overview" className="receivables-sidebar-item">
               <LayoutDashboard size={18} />
-              <span className="dashboard-sidebar-text">Dashboard</span>
+              <span>Dashboard</span>
             </a>
-            <a href="#/dashboard/payments" className="dashboard-sidebar-item">
+            <a href="#/dashboard/payments" className="receivables-sidebar-item">
               <Wallet size={18} />
-              <span className="dashboard-sidebar-text">Payments</span>
+              <span>Payments</span>
             </a>
-            <a href="#/dashboard/recoveries" className="dashboard-sidebar-item">
+            <a href="#/dashboard/recoveries" className="receivables-sidebar-item">
               <RefreshCw size={18} />
-              <span className="dashboard-sidebar-text">Recoveries</span>
+              <span>Recoveries</span>
             </a>
-            <a href="#/receivables" className="dashboard-sidebar-item active">
+            <a href="#/receivables" className="receivables-sidebar-item active">
               <Wallet size={18} />
-              <span className="dashboard-sidebar-text">Receivables</span>
+              <span>Receivables</span>
             </a>
-            <a href="#/subscriptions" className="dashboard-sidebar-item">
+            <a href="#/subscriptions" className="receivables-sidebar-item">
               <RefreshCw size={18} />
-              <span className="dashboard-sidebar-text">Subscriptions</span>
+              <span>Subscriptions</span>
             </a>
-            <a href="#/dashboard/analytics" className="dashboard-sidebar-item">
+            <a href="#/dashboard/analytics" className="receivables-sidebar-item">
               <Grid3x3 size={18} />
-              <span className="dashboard-sidebar-text">Analytics</span>
+              <span>Analytics</span>
             </a>
-            <a href="#/dashboard/workflows" className="dashboard-sidebar-item">
+            <a href="#/dashboard/workflows" className="receivables-sidebar-item">
               <Grid3x3 size={18} />
-              <span className="dashboard-sidebar-text">Workflows</span>
+              <span>Workflows</span>
             </a>
-            <a href="#/dashboard/audit-trail" className="dashboard-sidebar-item">
+            <a href="#/dashboard/audit-trail" className="receivables-sidebar-item">
               <Grid3x3 size={18} />
-              <span className="dashboard-sidebar-text">Audit Trail</span>
+              <span>Audit Trail</span>
             </a>
-            <a href="#/dashboard/settings" className="dashboard-sidebar-item">
+            <a href="#/dashboard/settings" className="receivables-sidebar-item">
               <Settings size={18} />
-              <span className="dashboard-sidebar-text">Settings</span>
+              <span>Settings</span>
             </a>
           </div>
-          <button type="button" className="dashboard-sidebar-toggle" onClick={toggleSidebar} aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}>
+          <button type="button" className="receivables-sidebar-toggle" onClick={toggleSidebar} aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}>
             {sidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-            <span className="dashboard-sidebar-text">{sidebarOpen ? 'Collapse' : 'Expand'}</span>
+            <span>{sidebarOpen ? 'Collapse' : 'Expand'}</span>
           </button>
-          <button type="button" className="dashboard-sidebar-logout" onClick={() => { window.location.hash = '#/'; }}>
+          <button type="button" className="receivables-sidebar-logout" onClick={() => { window.location.hash = '#/'; }}>
             <LogOut size={18} />
-            <span className="dashboard-sidebar-text">Logout</span>
+            <span>Logout</span>
           </button>
         </aside>
 
-        <main className="dashboard-main">
+        <main className="receivables-main">
           <section className="dashboard-section-head">
             <div>
               <p className="dashboard-eyebrow">B2B cash flow control</p>

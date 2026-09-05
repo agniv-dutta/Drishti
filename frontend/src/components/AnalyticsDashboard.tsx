@@ -27,6 +27,12 @@ type AnalyticsSummary = {
   strategy_recoveries?: Record<string, number>;
 };
 
+type AnalyticsAlert = {
+  tone: string;
+  icon: React.ReactNode;
+  text: string;
+};
+
 const fallbackSummary: AnalyticsSummary = {
   recovery_rate: 0.58,
   model_drift_score: 0.08,
@@ -36,7 +42,7 @@ const fallbackSummary: AnalyticsSummary = {
   channel_costs_inr: { sms: 6840, voice_ivr: 12100, email: 3200, offer: 8900 },
 };
 
-const costColors = ['#ff7359', '#e7bd78', '#96b89f', '#c88272'];
+const costColors = ['#FF6B54', '#D4A574', '#4CAF50', '#87CEEB'];
 
 const currency = (value: number) => `Rs ${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(value)}`;
 const percent = (value: number) => `${Math.round(value * 100)}%`;
@@ -47,6 +53,7 @@ const AnalyticsDashboard: React.FC = () => {
   const [period, setPeriod] = useState(30);
   const [refreshKey, setRefreshKey] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
 
   useEffect(() => {
     const saved = localStorage.getItem('sidebar_open');
@@ -99,11 +106,11 @@ const AnalyticsDashboard: React.FC = () => {
     const strategized = Math.round(total * 0.91);
     const executed = Math.round(total * 0.82);
     return [
-      { label: 'Payments ingested', value: total, fill: '#ff7359' },
-      { label: 'AI analyzed', value: analyzed, fill: '#f59d6c' },
-      { label: 'Strategy selected', value: strategized, fill: '#e7bd78' },
-      { label: 'Recovery executed', value: executed, fill: '#96b89f' },
-      { label: 'Revenue recovered', value: recovered, fill: '#6e9d85' },
+      { label: 'Payments ingested', value: total, fill: '#FF6B54' },
+      { label: 'AI analyzed', value: analyzed, fill: '#87CEEB' },
+      { label: 'Strategy selected', value: strategized, fill: '#D4A574' },
+      { label: 'Recovery executed', value: executed, fill: '#4CAF50' },
+      { label: 'Revenue recovered', value: recovered, fill: '#4CAF50' },
     ];
   }, [total, recovered]);
 
@@ -152,80 +159,81 @@ const AnalyticsDashboard: React.FC = () => {
     recoveryRate < 0.5 && { tone: 'warning', icon: <AlertTriangle size={16} />, text: `Recovery rate dropped to ${percent(recoveryRate)} today. Investigate?` },
     summary.model_drift_score > 0.15 && { tone: 'danger', icon: <Bell size={16} />, text: 'Strategy performance changed. Retrain recommended.' },
     { tone: 'notice', icon: <Activity size={16} />, text: '3 complaints about SMS today. Review templates?' },
-  ].filter(Boolean) as Array<{ tone: string; icon: React.ReactNode; text: string }>;
+  ].filter(Boolean) as AnalyticsAlert[];
+  const visibleAlerts = alertItems.filter((alert) => !dismissedAlerts.includes(alert.text));
 
   return (
-    <div className="dashboard-page">
-      <header className="dashboard-topbar">
-        <a href="#/" className="dashboard-brand" aria-label="Back to home">
+    <div className="analytics-page">
+      <header className="analytics-topbar">
+        <a href="#/" className="analytics-brand" aria-label="Back to home">
           <span className="dashboard-brand-mark" aria-hidden="true">D</span>
           <span className="dashboard-brand-name">Drishti</span>
         </a>
-        <nav className="dashboard-nav">
+        <nav className="analytics-nav">
           <a href="#/page/platform">Platform</a>
           <a href="#/page/solutions">Solutions</a>
           <a href="#/page/integrations">Integrations</a>
           <a href="#/page/company">Company</a>
         </nav>
-        <div className="dashboard-top-actions">
+        <div className="analytics-top-actions">
           <span className={`live-status ${connected ? 'connected' : ''}`}><i />{connected ? 'Live' : 'Snapshot'}</span>
           <a href="#/page/client-login" className="dashboard-login-link">Client Login</a>
-          <a href="#/page/get-started" className="dashboard-primary-action">Get Started</a>
+          <a href="#/page/get-started" className="analytics-primary-action">Get Started</a>
         </div>
       </header>
 
-      <div className={`dashboard-shell ${sidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
-        <aside className="dashboard-sidebar" aria-label="Sidebar navigation">
-          <div className="dashboard-sidebar-group">
-            <a href="#/dashboard/overview" className="dashboard-sidebar-item">
+      <div className="analytics-layout">
+        <aside className={`analytics-sidebar ${sidebarOpen ? '' : 'is-collapsed'}`} aria-label="Sidebar navigation">
+          <div className="analytics-sidebar-group">
+            <a href="#/dashboard/overview" className="analytics-sidebar-item">
               <LayoutDashboard size={18} />
-              <span className="dashboard-sidebar-text">Dashboard</span>
+              <span>Dashboard</span>
             </a>
-            <a href="#/dashboard/payments" className="dashboard-sidebar-item">
+            <a href="#/dashboard/payments" className="analytics-sidebar-item">
               <Wallet size={18} />
-              <span className="dashboard-sidebar-text">Payments</span>
+              <span>Payments</span>
             </a>
-            <a href="#/dashboard/recoveries" className="dashboard-sidebar-item">
+            <a href="#/dashboard/recoveries" className="analytics-sidebar-item">
               <RefreshCw size={18} />
-              <span className="dashboard-sidebar-text">Recoveries</span>
+              <span>Recoveries</span>
             </a>
-            <a href="#/receivables" className="dashboard-sidebar-item">
+            <a href="#/receivables" className="analytics-sidebar-item">
               <Wallet size={18} />
-              <span className="dashboard-sidebar-text">Receivables</span>
+              <span>Receivables</span>
             </a>
-            <a href="#/subscriptions" className="dashboard-sidebar-item">
+            <a href="#/subscriptions" className="analytics-sidebar-item">
               <RefreshCw size={18} />
-              <span className="dashboard-sidebar-text">Subscriptions</span>
+              <span>Subscriptions</span>
             </a>
-            <a href="#/dashboard/analytics" className="dashboard-sidebar-item active">
+            <a href="#/dashboard/analytics" className="analytics-sidebar-item active">
               <Grid3x3 size={18} />
-              <span className="dashboard-sidebar-text">Analytics</span>
+              <span>Analytics</span>
             </a>
-            <a href="#/dashboard/workflows" className="dashboard-sidebar-item">
+            <a href="#/dashboard/workflows" className="analytics-sidebar-item">
               <Grid3x3 size={18} />
-              <span className="dashboard-sidebar-text">Workflows</span>
+              <span>Workflows</span>
             </a>
-            <a href="#/dashboard/audit-trail" className="dashboard-sidebar-item">
+            <a href="#/dashboard/audit-trail" className="analytics-sidebar-item">
               <Grid3x3 size={18} />
-              <span className="dashboard-sidebar-text">Audit Trail</span>
+              <span>Audit Trail</span>
             </a>
-            <a href="#/dashboard/settings" className="dashboard-sidebar-item">
+            <a href="#/dashboard/settings" className="analytics-sidebar-item">
               <Settings size={18} />
-              <span className="dashboard-sidebar-text">Settings</span>
+              <span>Settings</span>
             </a>
           </div>
-          <button type="button" className="dashboard-sidebar-toggle" onClick={toggleSidebar} aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}>
+          <button type="button" className="analytics-sidebar-toggle" onClick={toggleSidebar} aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}>
             {sidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
-            <span className="dashboard-sidebar-text">{sidebarOpen ? 'Collapse' : 'Expand'}</span>
+            <span>{sidebarOpen ? 'Collapse' : 'Expand'}</span>
           </button>
-          <button type="button" className="dashboard-sidebar-logout" onClick={() => { window.location.hash = '#/'; }}>
+          <button type="button" className="analytics-sidebar-logout" onClick={() => { window.location.hash = '#/'; }}>
             <LogOut size={18} />
-            <span className="dashboard-sidebar-text">Logout</span>
+            <span>Logout</span>
           </button>
         </aside>
 
-        <main className="dashboard-main">
-          <section className="dashboard-section-head">
+        <main className={`analytics-main ${sidebarOpen ? '' : 'sidebar-collapsed'}`}>
+          <section className="analytics-heading">
             <div>
               <p className="dashboard-eyebrow">Performance intelligence</p>
               <h2>Recovery analytics</h2>
@@ -236,9 +244,9 @@ const AnalyticsDashboard: React.FC = () => {
 
           <section className="analytics-kpis"><article><span>Recovery rate</span><strong>{percent(recoveryRate)}</strong><small className="up">+6.4% vs prior period</small></article><article><span>Revenue recovered</span><strong>{currency(recovered * 450)}</strong><small>{recovered} successful payments</small></article><article><span>Avg cost / recovery</span><strong>{currency(summary.cost_per_recovery_inr || 420)}</strong><small>-19% vs prior period</small></article><article><span>Time to recovery</span><strong>{period <= 7 ? '4h 18m' : period <= 30 ? '6h 42m' : '8h 15m'}</strong><small>Median, all strategies</small></article></section>
 
-          {alertItems.length > 0 && <section className="analytics-alerts" aria-label="Alerts">{alertItems.map((alert) => <div className={`analytics-alert ${alert.tone}`} key={alert.text}>{alert.icon}<span>{alert.text}</span><button type="button" aria-label="Dismiss alert">×</button></div>)}</section>}
+          {visibleAlerts.length > 0 && <section className="analytics-alerts" aria-label="Alerts">{visibleAlerts.map((alert) => <div className={`analytics-alert ${alert.tone}`} key={alert.text}>{alert.icon}<span>{alert.text}</span><button type="button" aria-label={`Dismiss ${alert.text}`} onClick={() => setDismissedAlerts((current) => [...current, alert.text])}>×</button></div>)}</section>}
 
-          <section className="analytics-grid analytics-grid-top"><article className="analytics-panel funnel-panel"><div className="panel-heading"><div><p className="panel-kicker">Drop-off analysis</p><h2>Recovery funnel</h2></div><span>Last {period} days</span></div><ResponsiveContainer width="100%" height={240}><BarChart layout="vertical" data={funnel} margin={{ left: 18, right: 28 }}><CartesianGrid horizontal={false} stroke="#eadfd6" /><XAxis type="number" hide /><YAxis type="category" dataKey="label" width={120} tick={{ fill: '#675f5b', fontSize: 11 }} axisLine={false} tickLine={false} /><Tooltip cursor={{ fill: '#fff8f3' }} formatter={(value) => [value, 'payments']} /><Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>{funnel.map((entry) => <Cell key={entry.label} fill={entry.fill} />)}</Bar></BarChart></ResponsiveContainer></article><article className="analytics-panel"><div className="panel-heading"><div><p className="panel-kicker">Conversion by play</p><h2>Strategy performance</h2></div><span>Success rate</span></div><ResponsiveContainer width="100%" height={240}><BarChart data={strategies} margin={{ top: 12, right: 4, left: -22 }}><CartesianGrid vertical={false} stroke="#eadfd6" /><XAxis dataKey="name" tick={{ fill: '#675f5b', fontSize: 11 }} axisLine={false} tickLine={false} /><YAxis domain={[0, 80]} tickFormatter={(value) => `${value}%`} tick={{ fill: '#8b817b', fontSize: 10 }} axisLine={false} tickLine={false} /><Tooltip formatter={(value) => [`${value}%`, 'success']} /><Bar dataKey="success" fill="#ff7359" radius={[4, 4, 0, 0]} barSize={34} /></BarChart></ResponsiveContainer></article></section>
+          <section className="analytics-grid analytics-grid-top"><article className="analytics-panel funnel-panel"><div className="panel-heading"><div><p className="panel-kicker">Drop-off analysis</p><h2>Recovery funnel</h2></div><span>Last {period} days</span></div><ResponsiveContainer width="100%" height={240}><BarChart layout="vertical" data={funnel} margin={{ left: 18, right: 28 }}><CartesianGrid horizontal={false} stroke="#2D2D4A" /><XAxis type="number" hide /><YAxis type="category" dataKey="label" width={120} tick={{ fill: '#A0A0B0', fontSize: 12 }} axisLine={false} tickLine={false} /><Tooltip cursor={{ fill: '#2D2D4A' }} formatter={(value) => [value, 'payments']} /><Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>{funnel.map((entry) => <Cell key={entry.label} fill={entry.fill} />)}</Bar></BarChart></ResponsiveContainer></article><article className="analytics-panel"><div className="panel-heading"><div><p className="panel-kicker">Conversion by play</p><h2>Strategy performance</h2></div><span>Success rate</span></div><ResponsiveContainer width="100%" height={240}><BarChart data={strategies} margin={{ top: 12, right: 4, left: -22 }}><CartesianGrid vertical={false} stroke="#2D2D4A" /><XAxis dataKey="name" tick={{ fill: '#A0A0B0', fontSize: 12 }} axisLine={false} tickLine={false} /><YAxis domain={[0, 80]} tickFormatter={(value) => `${value}%`} tick={{ fill: '#A0A0B0', fontSize: 12 }} axisLine={false} tickLine={false} /><Tooltip formatter={(value) => [`${value}%`, 'success']} /><Bar dataKey="success" fill="#FF6B54" radius={[4, 4, 0, 0]} barSize={34} /></BarChart></ResponsiveContainer></article></section>
 
           <section className="analytics-grid analytics-grid-middle"><article className="analytics-panel trend-panel"><div className="panel-heading"><div><p className="panel-kicker">Cash recovered</p><h2>Revenue trend</h2></div><strong>{currency(recovered * 450)}</strong></div><ResponsiveContainer width="100%" height={215}><LineChart data={trend} margin={{ top: 16, right: 10, left: -8 }}><CartesianGrid vertical={false} stroke="#eadfd6" /><XAxis dataKey="day" tick={{ fill: '#8b817b', fontSize: 11 }} axisLine={false} tickLine={false} /><YAxis tickFormatter={(value) => `${value / 1000}k`} tick={{ fill: '#8b817b', fontSize: 10 }} axisLine={false} tickLine={false} /><Tooltip formatter={(value) => [currency(Number(value)), 'recovered']} /><Line type="monotone" dataKey="revenue" stroke="#2d1b4e" strokeWidth={3} dot={{ r: 3, fill: '#ff7359', strokeWidth: 0 }} /></LineChart></ResponsiveContainer></article><article className="analytics-panel cost-panel"><div className="panel-heading"><div><p className="panel-kicker">Unit economics</p><h2>Cost mix</h2></div></div><div className="cost-chart"><ResponsiveContainer width="52%" height={170}><PieChart><Pie data={pieData} dataKey="value" innerRadius={45} outerRadius={70} paddingAngle={3}>{pieData.map((entry, index) => <Cell key={entry.name} fill={costColors[index % costColors.length]} />)}</Pie><Tooltip formatter={(value) => [currency(Number(value)), 'cost']} /></PieChart></ResponsiveContainer><div className="cost-legend">{pieData.map((entry, index) => <div key={entry.name}><i style={{ background: costColors[index % costColors.length] }} /><span>{entry.name}</span><strong>{currency(entry.value)}</strong></div>)}</div></div></article></section>
 

@@ -156,7 +156,7 @@ const FeaturePage: React.FC<FeaturePageProps> = ({ slug }) => {
   const data = content[slug];
 
   return (
-    <div className="feature-page">
+    <div className={`feature-page feature-page-${slug}`}>
       <header className="feature-topbar">
         <a href="#/" className="feature-brand">
           <span className="feature-brand-mark" aria-hidden="true">

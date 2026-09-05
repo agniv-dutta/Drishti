@@ -95,8 +95,8 @@
 }
 
 .subheadline {
-  color: var(--cream);
-  opacity: 0.8;
+  color: #F3E8D1;
+  opacity: 0.92;
   font-size: 20px;
   max-width: 85%;
   margin-bottom: 48px;
@@ -377,9 +377,9 @@
 
 /* Trust Section */
 .trust-section {
-  padding: 80px 40px;
-  background-color: var(--cream);
-  border-top: 2px solid var(--sage);
+  padding: 80px 48px;
+  background-color: var(--bg-card);
+  border-top: 1px solid var(--border);
   display: flex;
   justify-content: center;
 }
@@ -405,16 +405,17 @@
 }
 
 .trust-col h3 {
-  font-size: 24px;
-  margin-bottom: 32px;
-  color: var(--deep-plum);
+  font-size: 20px;
+  line-height: 1.4;
+  margin-bottom: 24px;
+  color: var(--text-primary);
 }
 
 /* Metrics Box */
 .metrics-container {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 24px;
 }
 
 .metric-item {
@@ -425,10 +426,10 @@
 
 .metric-stat {
   font-family: var(--font-heading);
-  font-size: 40px;
+  font-size: 32px;
   font-weight: 700;
-  color: var(--deep-plum);
-  line-height: 1;
+  color: var(--text-primary);
+  line-height: 1.2;
 }
 
 .metric-stat.highlight {
@@ -437,7 +438,7 @@
 
 .metric-label {
   font-size: 14px;
-  color: var(--charcoal);
+  color: var(--text-tertiary);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -445,14 +446,14 @@
 
 /* Testimonial Carousel */
 .testimonial-box {
-  background-color: var(--champagne);
+  background-color: var(--bg-input);
   border-radius: 12px;
   padding: 32px;
   height: 100%;
   display: flex;
   flex-direction: column;
   position: relative;
-  border: 1px solid rgba(155, 139, 125, 0.3);
+  border: 1px solid var(--border);
 }
 
 .stars {
@@ -464,7 +465,7 @@
 
 .testimonial-text {
   font-size: 16px;
-  color: var(--charcoal);
+  color: var(--text-secondary);
   line-height: 1.6;
   font-style: italic;
   flex-grow: 1;
@@ -473,14 +474,14 @@
 
 .testimonial-author {
   font-family: var(--font-heading);
-  color: var(--deep-plum);
+  color: var(--text-primary);
   font-weight: 600;
   font-size: 16px;
 }
 
 .testimonial-company {
   font-size: 13px;
-  color: var(--sage);
+  color: var(--text-tertiary);
   margin-top: 2px;
 }
 
@@ -517,7 +518,7 @@
 }
 
 .logo-item {
-  background-color: rgba(155, 139, 125, 0.1);
+  background-color: var(--bg-hover);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -540,7 +541,7 @@
   width: 100%;
   max-width: 60px;
   height: auto;
-  fill: var(--charcoal);
+  fill: var(--text-tertiary);
   transition: fill 0.3s ease;
 }
 
@@ -658,12 +659,14 @@
 .final-cta-form input {
   flex: 1;
   min-width: 0;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.14);
   border: none;
   border-bottom: 2px solid rgba(255, 255, 255, 0.95);
   color: #FFFFFF;
   font-size: 16px;
   padding: 14px 0 12px;
+  padding-left: 14px;
+  border-radius: 8px 0 0 0;
   outline: none;
   transition: border-color 0.25s ease, opacity 0.25s ease;
 }

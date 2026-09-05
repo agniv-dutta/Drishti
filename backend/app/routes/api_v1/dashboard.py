@@ -295,3 +295,41 @@ async def export_report(
         "csv": buffer.getvalue(),
     }
     return success(data, agents=["AuditTrail"], latency_ms=elapsed_ms(started))
+
+
+# ---------------------------------------------------------------------------
+# Live data endpoints (synthetic, continuously updating)
+# ---------------------------------------------------------------------------
+
+@router.get("/live-metrics", dependencies=[Depends(require_api_key)])
+async def get_live_metrics(request: Request) -> dict:
+    """Return live aggregate KPI metrics from the background data generator."""
+    from app.services.live_data import live_data
+
+    started = measure()
+    data = live_data.get_live_metrics()
+    return success(data, latency_ms=elapsed_ms(started))
+
+
+@router.get("/live-agent-status", dependencies=[Depends(require_api_key)])
+async def get_live_agent_status(request: Request) -> dict:
+    """Return live agent processing status from the background data generator."""
+    from app.services.live_data import live_data
+
+    started = measure()
+    data = live_data.get_agent_status()
+    return success(data, latency_ms=elapsed_ms(started))
+
+
+@router.get("/live-payments", dependencies=[Depends(require_api_key)])
+async def get_live_payments(
+    request: Request,
+    limit: int = Query(default=50, ge=1, le=200),
+    status: Optional[str] = Query(default=None),
+) -> dict:
+    """Return live payment list from the background data generator."""
+    from app.services.live_data import live_data
+
+    started = measure()
+    data = live_data.get_payments_list(limit=limit, status=status)
+    return success(data, latency_ms=elapsed_ms(started))

@@ -8,6 +8,7 @@ import WorkflowBuilder from './components/WorkflowBuilder';
 import ReceivablesPage from './components/ReceivablesPage';
 import SubscriptionsPage from './components/SubscriptionsPage';
 import VoiceCallPage from './components/VoiceCallPage';
+import './theme.css';
 
 type Route =
   | { name: 'landing' }

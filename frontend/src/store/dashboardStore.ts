@@ -6,6 +6,7 @@ import type {
   Payment,
 } from '../types/dashboard';
 import { dashboardAPI } from '../services/api';
+import type { LiveAgentStatus, LiveDashboardMetrics, LivePayment } from '../services/api';
 
 type DashboardOverviewApi = {
   selected_payment_id: string | null;
@@ -100,6 +101,13 @@ interface DashboardStore {
   isLoading: boolean;
   error: string | null;
   periodDays: number;
+  liveAgents: LiveAgentStatus['agents'];
+  liveFallback: {
+    recoveryRate: boolean;
+    totalRecovered: boolean;
+    totalPaymentsProcessed: boolean;
+    payments: boolean;
+  };
 
   fetchPayments: () => Promise<void>;
   fetchJourney: (paymentId: string) => Promise<void>;
@@ -108,6 +116,7 @@ interface DashboardStore {
   setRecoveryMetrics: (rate: number, total: number) => void;
   selectPayment: (paymentId: string) => Promise<void>;
   setPeriod: (days: number) => void;
+  refreshLiveData: () => Promise<void>;
 }
 
 const mapPayment = (payment: DashboardOverviewApi['active_recoveries'][number]): Payment => ({
@@ -190,6 +199,16 @@ const mapActivity = (activity: DashboardOverviewApi['activity_feed'][number]): D
   paymentId: activity.payment_id,
 });
 
+const mapLivePayment = (payment: LivePayment): Payment => ({
+  id: payment.id,
+  amount: payment.amount,
+  status: payment.status,
+  strategyUsed: payment.strategy_used,
+  recoveredAmount: payment.money_recovered,
+  lastUpdated: payment.created_at,
+  chargebackRisk: null,
+});
+
 export const useDashboardStore = create<DashboardStore>((set, get) => ({
   payments: [],
   recoveryRate: 0,
@@ -202,6 +221,13 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   isLoading: false,
   error: null,
   periodDays: 7,
+  liveAgents: [],
+  liveFallback: {
+    recoveryRate: false,
+    totalRecovered: false,
+    totalPaymentsProcessed: false,
+    payments: false,
+  },
 
   fetchPayments: async () => {
     set({ isLoading: true, error: null });
@@ -216,6 +242,12 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
         totalPaymentsProcessed: overview.total_payments_processed,
         selectedPaymentId: overview.selected_payment_id,
         activityFeed: overview.activity_feed.map(mapActivity),
+        liveFallback: {
+          recoveryRate: overview.recovery_rate === 0,
+          totalRecovered: overview.total_recovered === 0,
+          totalPaymentsProcessed: overview.total_payments_processed === 0,
+          payments: overview.active_recoveries.length === 0,
+        },
       });
     } catch (error) {
       set({
@@ -258,6 +290,12 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
         totalPaymentsProcessed: overview.total_payments_processed,
         selectedPaymentId: nextSelectedPaymentId,
         activityFeed: overview.activity_feed.map(mapActivity),
+        liveFallback: {
+          recoveryRate: overview.recovery_rate === 0,
+          totalRecovered: overview.total_recovered === 0,
+          totalPaymentsProcessed: overview.total_payments_processed === 0,
+          payments: overview.active_recoveries.length === 0,
+        },
       });
 
       if (nextSelectedPaymentId) {
@@ -295,5 +333,36 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
 
   setPeriod: (days: number) => {
     set({ periodDays: days });
+  },
+
+  refreshLiveData: async () => {
+    const [metricsResult, agentsResult, paymentsResult] = await Promise.allSettled([
+      dashboardAPI.getLiveMetrics(),
+      dashboardAPI.getLiveAgentStatus(),
+      dashboardAPI.getLivePayments(),
+    ]);
+    const current = get();
+    const metrics = metricsResult.status === 'fulfilled' ? metricsResult.value : null;
+    const agents = agentsResult.status === 'fulfilled' ? agentsResult.value : null;
+    const livePayments = paymentsResult.status === 'fulfilled' ? paymentsResult.value : null;
+    const fallback = current.liveFallback;
+
+    const nextFallback = {
+      recoveryRate: fallback.recoveryRate && Boolean(metrics),
+      totalRecovered: fallback.totalRecovered && Boolean(metrics),
+      totalPaymentsProcessed: fallback.totalPaymentsProcessed && Boolean(metrics),
+      payments: fallback.payments && Boolean(livePayments),
+    };
+
+    set({
+      recoveryRate: fallback.recoveryRate && metrics ? metrics.recovery_rate : current.recoveryRate,
+      totalRecovered: fallback.totalRecovered && metrics ? metrics.total_recovered : current.totalRecovered,
+      totalPaymentsProcessed: fallback.totalPaymentsProcessed && metrics ? metrics.total_payments : current.totalPaymentsProcessed,
+      payments: fallback.payments && livePayments
+        ? livePayments.payments.map(mapLivePayment)
+        : current.payments,
+      liveAgents: agents?.agents ?? current.liveAgents,
+      liveFallback: nextFallback,
+    });
   },
 }));

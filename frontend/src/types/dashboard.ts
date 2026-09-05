@@ -1,4 +1,4 @@
-export type PaymentStatus = 'failed' | 'recovered' | 'escalated';
+export type PaymentStatus = 'failed' | 'recovered' | 'in_progress' | 'escalated';
 
 export interface Payment {
   id: string;

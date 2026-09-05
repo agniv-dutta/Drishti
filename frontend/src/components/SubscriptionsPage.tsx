@@ -9,6 +9,33 @@ const dateLabel = (value: string | null) => value ? new Intl.DateTimeFormat('en-
 
 const riskLabel = (risk: number) => risk > 0.7 ? 'high' : risk > 0.4 ? 'medium' : 'low';
 
+const demoSubscriptions: SubscriptionPayment[] = [
+  {
+    id: 'sub_demo_001', customer_id: 'cus_001', customer_name: 'Aster Labs', customer_email: 'finance@asterlabs.in',
+    subscription_id: 'plan_growth', subscription_name: 'Growth plan', billing_cycle: 2, amount: 24900,
+    failure_reason: 'insufficient_funds', retry_count: 1, retry_schedule: ['T+3h', 'T+24h', 'T+72h'],
+    status: 'retrying', churn_risk: 0.42, last_action: 'Retry scheduled', next_retry_at: '2026-09-05T18:00:00Z', events: [],
+  },
+  {
+    id: 'sub_demo_002', customer_id: 'cus_002', customer_name: 'Northstar Retail', customer_email: 'ops@northstarretail.in',
+    subscription_id: 'plan_scale', subscription_name: 'Scale plan', billing_cycle: 3, amount: 78000,
+    failure_reason: 'expired_card', retry_count: 0, retry_schedule: ['T+3h', 'T+24h', 'T+72h'],
+    status: 'failed', churn_risk: 0.81, last_action: null, next_retry_at: '2026-09-06T09:00:00Z', events: [],
+  },
+  {
+    id: 'sub_demo_003', customer_id: 'cus_003', customer_name: 'Kite Mobility', customer_email: 'accounts@kitemobility.in',
+    subscription_id: 'plan_pro', subscription_name: 'Pro plan', billing_cycle: 1, amount: 12900,
+    failure_reason: 'declined_by_issuer', retry_count: 2, retry_schedule: ['T+3h', 'T+24h', 'T+72h'],
+    status: 'retrying', churn_risk: 0.58, last_action: 'SMS reminder sent', next_retry_at: '2026-09-06T02:30:00Z', events: [],
+  },
+  {
+    id: 'sub_demo_004', customer_id: 'cus_004', customer_name: 'Verde Health', customer_email: 'billing@verdehealth.in',
+    subscription_id: 'plan_team', subscription_name: 'Team plan', billing_cycle: 1, amount: 8900,
+    failure_reason: '3ds_timeout', retry_count: 3, retry_schedule: ['T+3h', 'T+24h', 'T+72h'],
+    status: 'suspended', churn_risk: 0.76, last_action: 'Escalated to account owner', next_retry_at: null, events: [],
+  },
+];
+
 const SubscriptionsPage: React.FC = () => {
   const [payments, setPayments] = useState<SubscriptionPayment[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -19,7 +46,7 @@ const SubscriptionsPage: React.FC = () => {
   const load = () => {
     setLoading(true);
     void subscriptionsAPI.list(merchantId)
-      .then((data) => setPayments(data.payments))
+      .then((data) => setPayments(data.payments.length > 0 ? data.payments : demoSubscriptions))
       .catch(() => setError('Subscription recovery data is temporarily unavailable.'))
       .finally(() => setLoading(false));
   };

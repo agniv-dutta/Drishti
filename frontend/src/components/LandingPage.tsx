@@ -45,7 +45,7 @@ const LandingPage: React.FC = () => {
 
   const testimonials = [
     {
-      text: "Drishti revolutionized our collections. The AI-driven approach recovered ₹40Cr in the first quarter alone, entirely hands-off.",
+      text: "Drishti gave our collections team a clear, AI-assisted recovery workflow with less manual coordination.",
       author: "Priya Sharma",
       company: "VP Finance, TechCorp India"
     },
@@ -55,7 +55,7 @@ const LandingPage: React.FC = () => {
       company: "Director of Operations, FinServe"
     },
     {
-      text: "Their Smart Offer Engine perfectly balances recovery rates with customer retention. We've seen a 30% reduction in churn.",
+      text: "Their Smart Offer Engine balances recovery decisions with a thoughtful customer experience.",
       author: "Anita Patel",
       company: "Head of Payments, E-comm Plus"
     }
@@ -169,9 +169,9 @@ const LandingPage: React.FC = () => {
             >
               <div className="flex items-center" style={{ gap: '8px', color: 'var(--coral)' }}>
                 <Activity size={16} />
-                <span className="stat-label">Avg Recovery Rate</span>
+                <span className="stat-label">Recovery intelligence</span>
               </div>
-              <span className="stat-value">40-70%</span>
+              <span className="stat-value">Live signals</span>
             </motion.div>
 
             <motion.div 
@@ -184,9 +184,9 @@ const LandingPage: React.FC = () => {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
                 </svg>
-                <span className="stat-label">Capital Recovered</span>
+                <span className="stat-label">Recovery strategy</span>
               </div>
-              <span className="stat-value">$250M+</span>
+              <span className="stat-value">Adaptive</span>
             </motion.div>
 
             {/* Animation visualization */}
@@ -323,16 +323,16 @@ const LandingPage: React.FC = () => {
             <h3>Proven Results</h3>
             <div className="metrics-container">
               <div className="metric-item">
-                <span className="metric-stat highlight">₹250Cr+</span>
-                <span className="metric-label">Money Recovered</span>
+                <span className="metric-stat highlight">Live</span>
+                <span className="metric-label">Recovery data</span>
               </div>
               <div className="metric-item">
-                <span className="metric-stat">55%</span>
-                <span className="metric-label">Average Recovery Rate</span>
+                <span className="metric-stat">Context-aware</span>
+                <span className="metric-label">Strategy selection</span>
               </div>
               <div className="metric-item">
-                <span className="metric-stat">5 mins</span>
-                <span className="metric-label">Avg Time to Recovery</span>
+                <span className="metric-stat">Multi-channel</span>
+                <span className="metric-label">Recovery orchestration</span>
               </div>
             </div>
           </div>
@@ -376,7 +376,7 @@ const LandingPage: React.FC = () => {
 
           {/* Column 3: Company Logos */}
           <div className="trust-col">
-            <h3>Trusted by 100+ merchants</h3>
+            <h3>Built for recovery teams</h3>
             <div className="logos-grid">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="logo-item" title="Partner Logo Placeholder">
@@ -400,7 +400,7 @@ const LandingPage: React.FC = () => {
         >
           <div className="final-cta-badge">Built for recovery-led growth</div>
           <h2 id="final-cta-title" className="final-cta-title">Ready to Stop Losing Revenue?</h2>
-          <p className="final-cta-subtitle">Join merchants recovering ₹250Cr+ with Drishti</p>
+          <p className="final-cta-subtitle">Bring failed-payment recovery into one visible workflow with Drishti.</p>
 
           <div className="final-cta-actions" role="group" aria-label="Primary actions">
             <button

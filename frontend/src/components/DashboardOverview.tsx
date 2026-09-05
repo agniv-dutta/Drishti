@@ -248,6 +248,7 @@ const AnimatedCounter: React.FC<{ value: number; suffix?: string; duration?: num
 
 const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
   const loadDashboard = useDashboardStore((state) => state.loadDashboard);
+  const refreshLiveData = useDashboardStore((state) => state.refreshLiveData);
   const isLoading = useDashboardStore((state) => state.isLoading);
   const error = useDashboardStore((state) => state.error);
   const recoveryRate = useDashboardStore((state) => state.recoveryRate);
@@ -348,6 +349,14 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
   useEffect(() => {
     void loadDashboard();
   }, [loadDashboard, periodDays]);
+
+  useEffect(() => {
+    void refreshLiveData();
+    const interval = window.setInterval(() => {
+      void refreshLiveData();
+    }, 5000);
+    return () => window.clearInterval(interval);
+  }, [refreshLiveData]);
 
   const openJourney = (paymentId: string) => {
     setSelectedPaymentJourney(paymentId);
@@ -758,10 +767,6 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
             <a href="#/dashboard/audit-trail" className={`dashboard-sidebar-item ${section === 'audit-trail' ? 'active' : ''}`}>
               <Grid3x3 size={18} />
               <span className="dashboard-sidebar-text">Audit Trail</span>
-            </a>
-            <a href="#/dashboard/agent-operations" className={`dashboard-sidebar-item ${section === 'agent-operations' ? 'active' : ''}`}>
-              <RefreshCw size={18} />
-              <span className="dashboard-sidebar-text">Agent Operations</span>
             </a>
             <a href="#/dashboard/settings" className={`dashboard-sidebar-item ${section === 'settings' ? 'active' : ''}`}>
               <Settings size={18} />
@@ -1178,6 +1183,15 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.25, delay: index * 0.04 }}
                           onClick={() => openJourney(payment.id)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              openJourney(payment.id);
+                            }
+                          }}
+                          tabIndex={0}
+                          role="button"
+                          aria-label={`Open recovery journey for payment ${payment.id}`}
                           className="dashboard-table-row"
                         >
                           <td className="dashboard-table-id">#{payment.id}</td>

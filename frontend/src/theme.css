@@ -1,0 +1,807 @@
+:root {
+  --page-padding-x: 48px;
+  --page-padding-y: 32px;
+}
+
+.dashboard-page,
+.analytics-page,
+.receivables-page,
+.subscriptions-page,
+.journey-page,
+.feature-page,
+.workflow-page,
+.voice-page,
+.page-wrapper {
+  background: var(--bg-page) !important;
+  color: var(--text-secondary) !important;
+}
+
+.analytics-page input,
+.analytics-page select,
+.receivables-page input,
+.receivables-page select,
+.subscriptions-page input,
+.subscriptions-page select,
+.workflow-page input,
+.workflow-page select,
+.workflow-page textarea {
+  min-height: 40px;
+}
+
+.analytics-page small,
+.receivables-page small,
+.subscriptions-page small,
+.workflow-page small,
+.voice-page small,
+.analytics-page [class*="label"],
+.receivables-page [class*="label"],
+.subscriptions-page [class*="label"] {
+  font-size: 12px !important;
+}
+
+.analytics-heading .period-select {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+  color: #F3E8D1 !important;
+}
+
+.analytics-heading .period-select svg {
+  color: #F3E8D1 !important;
+}
+
+.analytics-heading .period-select select,
+.analytics-heading .period-select select option {
+  color: #F3E8D1 !important;
+  background: #252536 !important;
+}
+
+.analytics-page .analytics-kpis strong,
+.analytics-page .panel-heading h2,
+.analytics-page .cost-legend strong,
+.analytics-page .segment-list strong {
+  color: #F3E8D1 !important;
+}
+
+.analytics-page .analytics-kpis small,
+.analytics-page .cost-legend div,
+.analytics-page .segment-list div,
+.analytics-page .analytics-footer {
+  color: #E0E0E0 !important;
+}
+
+.analytics-page .segment-list em,
+.analytics-page .analytics-kpis .up,
+.analytics-page .panel-heading > strong {
+  color: #87CEEB !important;
+}
+
+.analytics-page .recharts-line-curve {
+  stroke: #D4A574 !important;
+}
+
+.analytics-page .recharts-dot {
+  fill: #FF6B54 !important;
+}
+
+.analytics-page .recharts-cartesian-axis-tick-value {
+  fill: #A0A0B0 !important;
+}
+
+.page-wrapper .subheadline {
+  color: #F3E8D1 !important;
+  opacity: 0.92;
+}
+
+.page-wrapper .final-cta-form input {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.85) !important;
+  border-radius: 8px 0 0 0;
+  color: #FFFFFF !important;
+}
+
+.page-wrapper .final-cta-form input::placeholder {
+  color: #F3E8D1 !important;
+  opacity: 0.82;
+}
+
+.page-wrapper .final-cta-form input:focus {
+  border-color: #F3E8D1 !important;
+  outline: 2px solid rgba(243, 232, 209, 0.45) !important;
+}
+
+.dashboard-topbar,
+.analytics-topbar,
+.receivables-topbar,
+.subscriptions-topbar,
+.journey-header {
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+  background: var(--bg-sidebar) !important;
+  border-color: var(--border) !important;
+}
+
+.subscriptions-topbar,
+.receivables-topbar {
+  gap: 24px;
+}
+
+.subscriptions-brand,
+.receivables-brand {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.subscriptions-brand {
+  min-width: 150px;
+}
+
+.subscriptions-topbar nav,
+.receivables-topbar nav {
+  flex: 1 1 auto;
+  justify-content: center;
+  min-width: 0;
+}
+
+.subscriptions-login,
+.receivables-login {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  margin-left: 12px;
+}
+
+.receivables-topbar > div:last-child {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 0 0 auto;
+}
+
+.dashboard-main,
+.analytics-main,
+.receivables-main,
+.subscriptions-main,
+.journey-main {
+  background: var(--bg-page) !important;
+  color: var(--text-secondary) !important;
+}
+
+.dashboard-sidebar,
+.analytics-sidebar,
+.receivables-sidebar {
+  background: var(--bg-sidebar) !important;
+  border-color: var(--border) !important;
+}
+
+.receivables-layout {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr);
+  min-height: calc(100vh - 70px);
+}
+
+.receivables-sidebar {
+  padding: 20px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-right: 1px solid var(--border) !important;
+}
+
+.receivables-sidebar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.receivables-sidebar-item,
+.receivables-sidebar-toggle,
+.receivables-sidebar-logout {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.receivables-sidebar-item:hover,
+.receivables-sidebar-item.active,
+.receivables-sidebar-toggle:hover,
+.receivables-sidebar-logout:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.receivables-sidebar-item.active {
+  border-left: 4px solid var(--coral);
+}
+
+.dashboard-sidebar-item,
+.dashboard-sidebar-logout,
+.dashboard-sidebar-toggle,
+.analytics-sidebar a,
+.analytics-sidebar button {
+  color: var(--text-secondary) !important;
+}
+
+.receivables-sidebar-item,
+.receivables-sidebar-toggle,
+.receivables-sidebar-logout {
+  color: var(--text-secondary) !important;
+}
+
+.dashboard-sidebar-item:hover,
+.dashboard-sidebar-item.active,
+.dashboard-sidebar-toggle:hover,
+.analytics-sidebar a:hover,
+.analytics-sidebar a.active,
+.analytics-sidebar button:hover {
+  background: var(--bg-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+.voice-page {
+  min-height: 100vh;
+  padding-top: 32px;
+  background: var(--bg-page) !important;
+  color: var(--text-secondary) !important;
+}
+
+.voice-shell {
+  max-width: 1180px;
+  padding: 48px;
+}
+
+.voice-back {
+  margin: 0 48px;
+  color: var(--text-secondary) !important;
+}
+
+.voice-heading h1,
+.voice-panel-heading h2,
+.voice-result strong {
+  color: var(--text-primary) !important;
+}
+
+.voice-heading > div:first-child > p:last-child,
+.voice-result p,
+.voice-muted {
+  color: var(--text-secondary) !important;
+}
+
+.voice-panel {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+}
+
+.voice-status {
+  border-color: var(--border) !important;
+  color: var(--text-secondary) !important;
+}
+
+.voice-status.live i {
+  background: var(--success) !important;
+}
+
+.voice-status.closed i {
+  background: var(--text-disabled) !important;
+}
+
+.dashboard-sidebar-item.active,
+.analytics-sidebar a.active {
+  border-left: 4px solid var(--coral);
+  box-shadow: none !important;
+}
+
+.dashboard-sidebar-item.active svg,
+.dashboard-sidebar-dot,
+.analytics-sidebar a.active svg {
+  color: var(--coral) !important;
+  background-color: transparent;
+}
+
+.dashboard-main,
+.analytics-main {
+  padding: var(--page-padding-y) var(--page-padding-x) !important;
+}
+
+.dashboard-kpi,
+.analytics-kpis article,
+.analytics-panel,
+.receivables-kpi,
+.receivables-panel,
+.subscription-summary article,
+.subscriptions-panel,
+.chargeback-panel,
+.journey-summary-chip,
+.workflow-panel,
+.voice-panel {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+.dashboard-kpi,
+.analytics-kpis article,
+.receivables-kpi,
+.subscription-summary article {
+  border-left: 4px solid var(--coral) !important;
+  padding: 24px !important;
+}
+
+.dashboard-kpi:nth-child(2),
+.analytics-kpis article:nth-child(2),
+.receivables-kpi-gold,
+.subscription-summary article:nth-child(2) {
+  border-left-color: var(--gold) !important;
+}
+
+.dashboard-kpi:nth-child(3),
+.analytics-kpis article:nth-child(3),
+.receivables-kpi-sage,
+.subscription-summary article:nth-child(4) {
+  border-left-color: var(--success) !important;
+}
+
+.dashboard-kpi:nth-child(4),
+.analytics-kpis article:nth-child(4),
+.receivables-kpi-rose,
+.subscription-summary article:nth-child(3) {
+  border-left-color: var(--info) !important;
+}
+
+.dashboard-metrics {
+  gap: 24px !important;
+  margin-bottom: 24px !important;
+}
+
+.dashboard-metric-card {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-left: 4px solid var(--coral) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-card) !important;
+  padding: 24px !important;
+}
+
+.dashboard-metric-card:nth-child(2) {
+  border-left-color: var(--gold) !important;
+}
+
+.dashboard-metric-card:nth-child(3) {
+  border-left-color: var(--success) !important;
+}
+
+.dashboard-metric-card:nth-child(4) {
+  border-left-color: var(--info) !important;
+}
+
+.dashboard-metric-card:nth-child(5) {
+  border-left-color: var(--warning) !important;
+}
+
+.dashboard-metric-label {
+  color: var(--text-tertiary) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase;
+}
+
+.dashboard-metric-value {
+  color: var(--text-primary) !important;
+  font-size: 32px !important;
+  line-height: 1.2 !important;
+}
+
+.dashboard-metric-foot span,
+.dashboard-metric-foot strong {
+  color: var(--text-secondary) !important;
+  font-size: 12px !important;
+}
+
+.metric-trend-up {
+  color: var(--success) !important;
+}
+
+.metric-trend-down {
+  color: var(--coral) !important;
+}
+
+.dashboard-kpi-label,
+.analytics-kpis span,
+.analytics-kpis small,
+.receivables-kpi span,
+.receivables-kpi small,
+.subscription-summary span,
+.subscription-summary small,
+.panel-kicker,
+.analytics-eyebrow,
+.receivables-eyebrow,
+.subscriptions-eyebrow,
+.journey-kicker,
+.dashboard-sidebar-label,
+.analytics-sidebar-label {
+  color: var(--text-tertiary) !important;
+}
+
+.dashboard-kpi-value,
+.analytics-kpis strong,
+.receivables-kpi strong,
+.subscription-summary strong,
+.journey-summary-chip strong,
+.dashboard-hero-copy h1,
+.analytics-heading h1,
+.receivables-heading h1,
+.subscriptions-heading h1,
+.journey-hero h1,
+.analytics-panel h2,
+.receivables-panel-heading h2,
+.subscriptions-panel-heading h2 {
+  color: var(--text-primary) !important;
+}
+
+.dashboard-filter-button,
+.dashboard-filter-menu,
+.period-select,
+.workflow-form input,
+.workflow-form textarea,
+.workflow-form select,
+input,
+select,
+textarea {
+  background: var(--bg-input) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-disabled) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.dashboard-filter-button:focus,
+.period-select:focus-within {
+  outline: 2px solid var(--coral) !important;
+  outline-offset: 1px;
+}
+
+.dashboard-filter-menu button:hover,
+.dashboard-table-row:hover,
+.receivables-table tbody tr:hover,
+.subscriptions-table tbody tr:hover {
+  background: var(--bg-hover) !important;
+}
+
+.dashboard-table,
+.receivables-table,
+.subscriptions-table {
+  color: var(--text-secondary);
+}
+
+.dashboard-table th,
+.receivables-table th,
+.subscriptions-table th {
+  background: var(--bg-card) !important;
+  color: var(--text-tertiary) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+  padding: 12px 16px !important;
+}
+
+.dashboard-table td,
+.receivables-table td,
+.subscriptions-table td {
+  color: var(--text-secondary) !important;
+  font-size: 14px !important;
+  padding: 12px 16px !important;
+  border-color: var(--border) !important;
+}
+
+.analytics-alert,
+.receivables-error,
+.subscriptions-error,
+.chargeback-flag {
+  background: var(--bg-card) !important;
+  border-left: 4px solid var(--warning) !important;
+  color: var(--text-secondary) !important;
+}
+
+.analytics-alert.danger,
+.chargeback-panel-high,
+.chargeback-panel-critical {
+  border-left-color: var(--coral) !important;
+}
+
+.analytics-alert.notice {
+  border-left-color: var(--success) !important;
+}
+
+.dashboard-primary-action,
+.dashboard-export-button,
+.journey-primary-button,
+.btn-primary {
+  background: var(--coral) !important;
+  color: var(--text-primary) !important;
+  border-radius: 8px !important;
+}
+
+.dashboard-secondary-action,
+.journey-link-button,
+.receivables-refresh,
+.subscriptions-refresh,
+.btn-secondary {
+  background: transparent !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--text-secondary) !important;
+  border-radius: 8px !important;
+}
+
+button:disabled,
+.disabled {
+  background: var(--bg-input) !important;
+  color: var(--text-disabled) !important;
+  cursor: not-allowed !important;
+}
+
+.invoice-status,
+.badge-success,
+.badge-warning,
+.badge-error,
+.churn-risk,
+.status-badge {
+  border-radius: 4px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+}
+
+.feature-page,
+.workflow-page,
+.page-wrapper {
+  background: var(--bg-page) !important;
+  color: var(--text-secondary) !important;
+}
+
+.workflow-page {
+  background: var(--bg-page) !important;
+}
+
+.workflow-main {
+  max-width: 1480px;
+  padding: 32px 48px 48px !important;
+}
+
+.workflow-heading {
+  margin: 32px 0 24px !important;
+}
+
+.workflow-heading h1,
+.workflow-panel-title h2,
+.workflow-form strong,
+.strategy-info strong {
+  color: var(--text-primary) !important;
+}
+
+.workflow-heading p:last-child,
+.workflow-panel-title > div > p,
+.workflow-meta label > span,
+.workflow-form label > span {
+  color: var(--text-tertiary) !important;
+}
+
+.workflow-builder-grid {
+  grid-template-columns: minmax(230px, 0.82fr) minmax(480px, 2.2fr) minmax(280px, 0.92fr) !important;
+  gap: 16px !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.workflow-palette,
+.workflow-canvas,
+.workflow-inspector {
+  min-width: 0;
+  max-height: calc(100vh - 290px) !important;
+  padding: 24px !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-card);
+}
+
+.strategy-item,
+.performance-card,
+.ai-suggestions,
+.suggestion-item,
+.workflow-form,
+.workflow-node {
+  background: var(--bg-input) !important;
+  border-color: var(--border) !important;
+  color: var(--text-secondary) !important;
+}
+
+.strategy-tabs button,
+.strategy-info span,
+.workflow-node-content small,
+.performance-card span,
+.suggestion-item p {
+  color: var(--text-secondary) !important;
+}
+
+.workflow-node.selected {
+  border-color: var(--coral) !important;
+  box-shadow: 0 0 0 2px rgba(255, 107, 84, 0.2);
+}
+
+@media (max-width: 1100px) {
+  .workflow-main {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+
+  .workflow-builder-grid {
+    grid-template-columns: minmax(210px, 0.8fr) minmax(420px, 1.8fr) !important;
+  }
+
+  .workflow-inspector {
+    grid-column: 1 / -1;
+    max-height: none !important;
+  }
+}
+
+.feature-page h1,
+.feature-page h2,
+.feature-page h3,
+.workflow-page h1,
+.workflow-page h2,
+.workflow-page h3,
+.page-wrapper h1,
+.page-wrapper h2,
+.page-wrapper h3 {
+  color: var(--text-primary) !important;
+}
+
+.feature-page section,
+.workflow-panel,
+.workflow-card,
+.page-wrapper .card {
+  background: var(--bg-card) !important;
+  border-color: var(--border) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+.analytics-panel,
+.receivables-panel,
+.subscriptions-panel,
+.workflow-panel,
+.voice-panel {
+  margin-bottom: 24px;
+}
+
+.analytics-panel,
+.receivables-panel,
+.subscriptions-panel,
+.workflow-panel,
+.voice-panel,
+.dashboard-metric-card,
+.dashboard-kpi {
+  border-radius: 12px !important;
+}
+
+.analytics-page button,
+.receivables-page button,
+.subscriptions-page button,
+.workflow-page button,
+.voice-page button,
+.dashboard-page button {
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, opacity 0.16s ease;
+}
+
+.analytics-page button:active,
+.receivables-page button:active,
+.subscriptions-page button:active,
+.workflow-page button:active,
+.voice-page button:active,
+.dashboard-page button:active {
+  transform: translateY(1px);
+}
+
+.receivables-table th,
+.subscriptions-table th,
+.dashboard-table th {
+  height: 48px;
+}
+
+.receivables-table td,
+.subscriptions-table td,
+.dashboard-table td {
+  min-height: 48px;
+}
+
+@media (max-width: 900px) {
+  .receivables-layout {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  .receivables-sidebar-item,
+  .receivables-sidebar-toggle,
+  .receivables-sidebar-logout {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .receivables-sidebar-item span,
+  .receivables-sidebar-toggle span,
+  .receivables-sidebar-logout span {
+    display: none;
+  }
+
+  .subscriptions-topbar,
+  .receivables-topbar {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+
+  .subscriptions-topbar nav,
+  .receivables-topbar nav {
+    display: none;
+  }
+
+  .subscriptions-brand {
+    min-width: 0;
+  }
+}
+
+.invoice-status.paid,
+.badge-success,
+.churn-risk.low {
+  background: rgba(76, 175, 80, 0.16) !important;
+  border-left: 4px solid var(--success) !important;
+  color: var(--success) !important;
+}
+
+.invoice-status.disputed,
+.badge-error,
+.churn-risk.high {
+  background: rgba(255, 107, 84, 0.16) !important;
+  border-left: 4px solid var(--coral) !important;
+  color: var(--coral) !important;
+}
+
+.invoice-status,
+.badge-warning,
+.churn-risk.medium {
+  background: rgba(255, 193, 7, 0.16) !important;
+  border-left: 4px solid var(--warning) !important;
+  color: var(--warning) !important;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --page-padding-x: 24px;
+    --page-padding-y: 24px;
+  }
+}
+
+@media (max-width: 560px) {
+  :root {
+    --page-padding-x: 16px;
+    --page-padding-y: 20px;
+  }
+}
