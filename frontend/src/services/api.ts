@@ -149,4 +149,44 @@ export const receivablesAPI = {
     apiClient.post('/recovery/b2b/send-reminder', null, { params: { invoice_id: invoiceId } }),
 };
 
+export type SubscriptionPayment = {
+  id: string;
+  customer_id: string;
+  customer_name: string;
+  customer_email: string;
+  subscription_id: string;
+  subscription_name: string;
+  billing_cycle: number;
+  amount: number;
+  failure_reason: string;
+  retry_count: number;
+  retry_schedule: string[];
+  status: 'failed' | 'retrying' | 'recovered' | 'suspended';
+  churn_risk: number;
+  last_action: string | null;
+  next_retry_at: string | null;
+  events: Array<{ id: string; action: string; status: string; message: string; scheduled_for: string | null }>;
+};
+
+export type SubscriptionAction = {
+  subscription_payment_id: string;
+  strategy: string;
+  confidence: number;
+  message: string;
+  next_retry: string | null;
+  days_until_suspension?: number | null;
+};
+
+export const subscriptionsAPI = {
+  list: (merchantId: string) =>
+    apiClient.get<{ data: { payments: SubscriptionPayment[] } }>('/recovery/subscription/payments', { params: { merchant_id: merchantId } })
+      .then((response) => unwrap(response)),
+  handleFailure: (paymentId: string) =>
+    apiClient.post<{ data: SubscriptionAction }>('/recovery/subscription/handle-failure', null, { params: { subscription_payment_id: paymentId } })
+      .then((response) => unwrap(response)),
+  churnRisk: (customerId: string) =>
+    apiClient.get('/recovery/subscription/churn-risk', { params: { customer_id: customerId } })
+      .then((response) => unwrap(response)),
+};
+
 export default apiClient;

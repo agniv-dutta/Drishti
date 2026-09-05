@@ -514,6 +514,20 @@ class SupervisorAgent(BaseAgent):
         if recovery.status == RecoveryStatus.EXHAUSTED.value:
             raise SupervisorError("recovery attempts exhausted for this payment")
 
+        if recovery.plan_json is None:
+            # Legacy/seeded record without a persisted plan: rebuild it,
+            # honoring the strategy that was recorded on the recovery.
+            try:
+                strategy = RecoveryStrategy(recovery.strategy)
+            except ValueError:
+                strategy = None
+            rebuilt, _ = await self.build_plan(
+                db, recovery.payment_id, override_strategy=strategy, persist=False
+            )
+            recovery.save_plan(rebuilt)
+            db.add(recovery)
+            db.flush()
+
         plan = RecoveryPlan(**recovery.plan_json)
         payment = self._get_payment(db, recovery.payment_id)
         txn = payment.to_domain()

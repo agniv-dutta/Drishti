@@ -336,6 +336,96 @@ class BillingPaymentPromise(Base):
 
 
 # ---------------------------------------------------------------------------
+# Subscription recovery
+# ---------------------------------------------------------------------------
+
+class SubscriptionPayment(Base):
+    """Failed recurring payment and its progressive recovery state."""
+
+    __tablename__ = "subscription_payments"
+    __table_args__ = (
+        Index("ix_subscription_payments_merchant_status", "merchant_id", "status"),
+        Index("ix_subscription_payments_customer", "customer_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    merchant_id: Mapped[str] = mapped_column(String(64), index=True)
+    customer_id: Mapped[str] = mapped_column(String(64), index=True)
+    customer_name: Mapped[str] = mapped_column(String(200))
+    customer_email: Mapped[str] = mapped_column(String(200))
+    customer_phone: Mapped[Optional[str]] = mapped_column(String(32))
+    subscription_id: Mapped[str] = mapped_column(String(64), index=True)
+    subscription_name: Mapped[str] = mapped_column(String(160), default="subscription")
+    billing_cycle: Mapped[int] = mapped_column(Integer, default=1)
+    amount: Mapped[float] = mapped_column(Float)
+    failure_reason: Mapped[str] = mapped_column(String(64), default="unknown")
+    retry_count: Mapped[int] = mapped_column(Integer, default=0)
+    retry_schedule: Mapped[List[str]] = mapped_column(JSON, default=lambda: ["T+3h", "T+24h", "T+72h"])
+    status: Mapped[str] = mapped_column(String(24), default="failed", index=True)
+    churn_risk: Mapped[float] = mapped_column(Float, default=0.5)
+    support_complaints: Mapped[int] = mapped_column(Integer, default=0)
+    months_active: Mapped[float] = mapped_column(Float, default=1.0)
+    lifetime_value: Mapped[float] = mapped_column(Float, default=0.0)
+    last_login: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    last_action: Mapped[Optional[str]] = mapped_column(String(40))
+    next_retry_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class SubscriptionRecoveryEvent(Base):
+    """Audit-friendly history of subscription recovery actions."""
+
+    __tablename__ = "subscription_recovery_events"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    subscription_payment_id: Mapped[str] = mapped_column(ForeignKey("subscription_payments.id"), index=True)
+    action: Mapped[str] = mapped_column(String(40))
+    status: Mapped[str] = mapped_column(String(24))
+    message: Mapped[str] = mapped_column(Text, default="")
+    scheduled_for: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+# ---------------------------------------------------------------------------
+# Mandate recovery
+# ---------------------------------------------------------------------------
+
+class Mandate(Base):
+    """Pre-authorized recurring debit tracked through mandate recovery."""
+
+    __tablename__ = "mandates"
+    __table_args__ = (
+        Index("ix_mandates_merchant_status", "merchant_id", "status"),
+        Index("ix_mandates_failure_date", "failure_date"),
+    )
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    merchant_id: Mapped[str] = mapped_column(String(64), index=True)
+    customer_name: Mapped[str] = mapped_column(String(200))
+    amount: Mapped[float] = mapped_column(Float)
+    retry_attempts: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(24), default="active", index=True)
+    failure_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    promised_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class MandateRetry(Base):
+    """Durable schedule and audit record for a mandate retry attempt."""
+
+    __tablename__ = "mandate_retries"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
+    mandate_id: Mapped[str] = mapped_column(ForeignKey("mandates.id"), index=True)
+    scheduled_for: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    attempt_number: Mapped[int] = mapped_column(Integer)
+    reason: Mapped[str] = mapped_column(String(160))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+# ---------------------------------------------------------------------------
 # Audit trail
 # ---------------------------------------------------------------------------
 

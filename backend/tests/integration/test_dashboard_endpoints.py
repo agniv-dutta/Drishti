@@ -13,7 +13,7 @@ def test_dashboard_overview_and_journey(client, sample_failed_payment, auto_conf
 
     overview = client.get("/api/v1/dashboard/overview")
     assert overview.status_code == 200, overview.text
-    overview_body = overview.json()
+    overview_body = overview.json()["data"]
     assert overview_body["selected_payment_id"] == payment_id
     assert overview_body["total_payments_processed"] >= 1
     assert overview_body["active_recoveries"]
@@ -21,7 +21,7 @@ def test_dashboard_overview_and_journey(client, sample_failed_payment, auto_conf
 
     journey = client.get(f"/api/v1/dashboard/journey/{payment_id}")
     assert journey.status_code == 200, journey.text
-    journey_body = journey.json()
+    journey_body = journey.json()["data"]
     assert journey_body["payment_id"] == payment_id
     assert journey_body["nodes"]
     assert journey_body["nodes"][0]["id"] == "created"
@@ -59,7 +59,7 @@ def test_dashboard_journey_includes_chargeback_risk_for_sms_recovery(client, sam
 
     overview = client.get("/api/v1/dashboard/overview")
     assert overview.status_code == 200, overview.text
-    overview_body = overview.json()
+    overview_body = overview.json()["data"]
     overview_risks = [
         item["chargeback_risk"]["risk_score_pct"]
         for item in overview_body["active_recoveries"]
@@ -69,6 +69,6 @@ def test_dashboard_journey_includes_chargeback_risk_for_sms_recovery(client, sam
 
     journey = client.get(f"/api/v1/dashboard/journey/{payment_id}")
     assert journey.status_code == 200, journey.text
-    journey_body = journey.json()
+    journey_body = journey.json()["data"]
     assert journey_body["chargeback_risk"]["risk_score_pct"] > 40
     assert journey_body["chargeback_risk"]["manual_review_required"] is True

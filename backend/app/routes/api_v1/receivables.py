@@ -95,6 +95,10 @@ def _score_payment_risk(invoice: BillingInvoice) -> float:
     return round(min(0.99, 0.10 + days_factor + reminder_factor + amount_factor + dispute_factor), 3)
 
 
+def _as_utc(value: datetime) -> datetime:
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
+
 @router.post("/invoices")
 async def create_invoice(payload: BillingInvoiceCreate, request: Request, db: Session = Depends(get_db)) -> dict:
     started = measure()
@@ -224,7 +228,7 @@ async def get_dso_metrics(merchant_id: str = Query(...), request: Request = None
         invoice.refresh_days_overdue()
     total_ar = sum(item.amount for item in invoices if item.status not in {"paid", "disputed"})
     period_start = utcnow() - timedelta(days=30)
-    total_sales = sum(item.amount for item in invoices if item.issue_date >= period_start)
+    total_sales = sum(item.amount for item in invoices if _as_utc(item.issue_date) >= period_start)
     dso = round((total_ar / total_sales) * 30, 1) if total_sales else 0.0
     overdue = [item for item in invoices if item.days_overdue > 0 and item.status not in {"paid", "disputed"}]
     data = {

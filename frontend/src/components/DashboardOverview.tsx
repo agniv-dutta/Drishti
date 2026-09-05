@@ -29,7 +29,7 @@ import type { DashboardActivityItem, Payment } from '../types/dashboard';
 import PerformanceOverview from './PerformanceOverview';
 import './DashboardOverview.css';
 
-export type DashboardSection = 'overview' | 'payments' | 'recoveries' | 'receivables' | 'analytics' | 'workflows' | 'audit-trail' | 'agent-operations' | 'settings';
+export type DashboardSection = 'overview' | 'payments' | 'recoveries' | 'receivables' | 'subscriptions' | 'analytics' | 'workflows' | 'audit-trail' | 'agent-operations' | 'settings';
 
 type DashboardOverviewProps = {
   section: DashboardSection;
@@ -53,6 +53,7 @@ const sectionLabel: Record<DashboardSection, string> = {
   payments: 'Payments',
   recoveries: 'Recoveries',
   receivables: 'Receivables',
+  subscriptions: 'Subscriptions',
   analytics: 'Analytics',
   workflows: 'Workflows',
   'audit-trail': 'Audit Trail',
@@ -731,6 +732,10 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
             <a href="#/receivables" className={`dashboard-sidebar-item ${section === 'receivables' ? 'active' : ''}`}>
               <Wallet size={18} />
               <span className="dashboard-sidebar-text">Receivables</span>
+            </a>
+            <a href="#/subscriptions" className={`dashboard-sidebar-item ${section === 'subscriptions' ? 'active' : ''}`}>
+              <RefreshCw size={18} />
+              <span className="dashboard-sidebar-text">Subscriptions</span>
             </a>
             <a href="#/dashboard/analytics" className={`dashboard-sidebar-item ${section === 'analytics' ? 'active' : ''}`}>
               <Grid3x3 size={18} />

@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
-from app.agents import get_supervisor
+from app.agents import RecoveryNotFoundError, SupervisorError, get_supervisor
 from app.core.responses import elapsed_ms, error, measure, success
 from app.core.security import require_api_key
 from app.database.models import PaymentRecord, RecoveryRecord
@@ -169,8 +169,12 @@ async def execute_recovery(
     started = measure()
     try:
         result, recovery = await get_supervisor().execute_recovery(db, plan_id=recovery_id, dry_run=dry_run)
+    except RecoveryNotFoundError as exc:
+        return error("RECOVERY_NOT_FOUND", str(exc), status_code=404, latency_ms=elapsed_ms(started), request=request)
+    except SupervisorError as exc:
+        return error("EXECUTION_BLOCKED", str(exc), status_code=409, latency_ms=elapsed_ms(started), request=request)
     except Exception as exc:  # noqa: BLE001
-        return error("EXECUTE_FAILED", str(exc), status_code=404, latency_ms=elapsed_ms(started), request=request)
+        return error("EXECUTION_FAILED", str(exc), status_code=500, latency_ms=elapsed_ms(started), request=request)
 
     result_json = result.model_dump(mode="json") if hasattr(result, "model_dump") else result
     if dry_run:
