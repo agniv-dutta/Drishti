@@ -50,6 +50,24 @@ export const dashboardAPI = {
 
   getJourney: (paymentId: string) =>
     apiClient.get<unknown>(`/dashboard/journey/${paymentId}`),
+
+  getMetricsSummary: (period: 'current' | 'monthly' = 'current') =>
+    apiClient.get<PerformanceMetrics>('/dashboard/metrics-summary', { params: { period } }),
+};
+
+export type PerformanceMetrics = {
+  period: string;
+  total_payments: number;
+  total_payments_change: number;
+  recovery_rate: number;
+  recovery_target: number;
+  total_recovered: number;
+  weekly_change: number;
+  avg_cost_per_recovery: number;
+  retry_recovered: number;
+  sms_recovered: number;
+  call_recovered: number;
+  timestamp: string;
 };
 
 export const paymentsAPI = {

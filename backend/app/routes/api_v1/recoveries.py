@@ -10,12 +10,13 @@ from sqlalchemy.orm import Session
 
 from app.agents import get_supervisor
 from app.core.responses import elapsed_ms, error, measure, success
+from app.core.security import require_api_key
 from app.database.models import PaymentRecord, RecoveryRecord
 from app.database.session import get_db
 from app.models.recovery import RecoveryStatus
 from app.utils.formatters import paise_to_rupees
 
-router = APIRouter(prefix="/recoveries", tags=["recoveries"])
+router = APIRouter(prefix="/recoveries", tags=["recoveries"], dependencies=[Depends(require_api_key)])
 
 STOPPABLE = (RecoveryStatus.PENDING.value, RecoveryStatus.PLANNED.value, RecoveryStatus.IN_PROGRESS.value)
 

@@ -38,7 +38,7 @@ def _rupees(amount_paise: int) -> float:
     return round(amount_paise / 100.0, 2)
 
 
-@router.get("/overview")
+@router.get("/overview", dependencies=[Depends(require_api_key)])
 async def get_overview(
     request: Request,
     payment_id: Optional[str] = Query(default=None),
@@ -112,7 +112,7 @@ def _relative(value: datetime) -> str:
     return f"{minutes // 60}h ago"
 
 
-@router.get("/journey/{payment_id}")
+@router.get("/journey/{payment_id}", dependencies=[Depends(require_api_key)])
 async def get_journey(
     payment_id: str,
     request: Request,
@@ -126,6 +126,11 @@ async def get_journey(
     recovery = _latest_recovery_for_payment(db, payment_id)
     recovered_amount = _rupees(recovery.recovered_amount_paise if recovery else 0)
     subtitle = f"Transaction ID: #{payment.order_id or payment.id[:8].upper()}"
+    chargeback_risk = None
+    if recovery and recovery.result_json and recovery.result_json.get("chargeback_risk"):
+        from app.models.chargeback import ChargebackRiskAssessment
+
+        chargeback_risk = ChargebackRiskAssessment(**recovery.result_json["chargeback_risk"])
     data = DashboardJourneyResponse(
         payment_id=payment.id,
         transaction_id=payment.order_id or payment.id,
@@ -135,22 +140,10 @@ async def get_journey(
         status=_status_label(recovery.status if recovery else RecoveryStatus.FAILED.value),
         recovered_amount=recovered_amount,
         nodes=_build_journey_nodes(payment, recovery),
-        chargeback_risk=(
-            {
-                **dict(_chargeback(recovery.result_json))
-            }
-            if _chargeback(recovery.result_json)
-            else None
-        ),
+        chargeback_risk=chargeback_risk,
         generated_at=datetime.now(timezone.utc),
     ).model_dump(mode="json")
     return success(data, agents=["ExecutorAgent"], latency_ms=elapsed_ms(started))
-
-
-def _chargeback(result_json):
-    if not result_json or not result_json.get("chargeback_risk"):
-        return None
-    return result_json["chargeback_risk"]
 
 
 @router.get("/agents-status", dependencies=[Depends(require_api_key)])

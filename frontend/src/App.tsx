@@ -40,6 +40,9 @@ const getRoute = (): Route => {
   if (segments[0] === 'journey') {
     return { name: 'journey', paymentId: segments[1] ?? null };
   }
+  if (segments[0] === 'recovery' && segments[2] === 'journey') {
+    return { name: 'journey', paymentId: segments[1] ?? null };
+  }
   if (segments[0] === 'page' && isFeatureSlug(segments[1])) {
     return { name: 'feature', slug: segments[1] };
   }

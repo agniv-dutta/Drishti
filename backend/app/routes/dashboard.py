@@ -324,3 +324,42 @@ async def get_journey(
         ),
         generated_at=datetime.now(timezone.utc),
     )
+
+
+    @router.get("/metrics-summary")
+    async def get_metrics_summary(
+        period: str = Query(default="current"),
+        db: Session = Depends(get_db),
+    ):
+        """Return the live performance-card metrics for the selected period."""
+        days = 30 if period == "monthly" else 7
+        cutoff = utcnow() - timedelta(days=days)
+        payments = db.query(PaymentRecord).filter(PaymentRecord.created_at >= cutoff).all()
+        recoveries = (
+            db.query(RecoveryRecord)
+            .filter(RecoveryRecord.created_at >= cutoff)
+            .all()
+        )
+        recovered = [item for item in recoveries if item.status == RecoveryStatus.SUCCEEDED.value]
+        total_recovered_paise = sum(item.recovered_amount_paise for item in recovered)
+        total_cost_paise = sum(item.cost_paise for item in recovered)
+        count = len(payments)
+        recovered_count = len(recovered)
+
+        def strategy_total(strategy: str) -> float:
+            return round(sum(item.recovered_amount_paise for item in recovered if item.strategy == strategy) / 100, 2)
+
+        return {
+            "period": period,
+            "total_payments": count,
+            "total_payments_change": 0,
+            "recovery_rate": round((recovered_count / count) * 100, 1) if count else 0.0,
+            "recovery_target": 60.0,
+            "total_recovered": round(total_recovered_paise / 100, 2),
+            "weekly_change": 0.0,
+            "avg_cost_per_recovery": round(total_cost_paise / recovered_count / 100, 2) if recovered_count else 0.0,
+            "retry_recovered": strategy_total("smart_retry"),
+            "sms_recovered": strategy_total("nudge_digital"),
+            "call_recovered": strategy_total("high_touch_voice"),
+            "timestamp": utcnow(),
+        }

@@ -6,6 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.agents import (
+    AuditSupervisorAgent,
+    ExecutionOrchestratorAgent,
+    PaymentAnalyzerAgent,
+    StrategySelectorAgent,
     PaymentNotFoundError,
     RecoveryNotFoundError,
     SupervisorError,
@@ -13,6 +17,7 @@ from app.agents import (
 )
 from app.core.security import require_api_key
 from app.database.models import RecoveryRecord
+from app.database.models import PaymentRecord
 from app.database.session import get_db
 from app.models.recovery import ExecutionResult, RecoveryPlan
 from app.schemas.recovery_schemas import (
@@ -28,6 +33,33 @@ from app.schemas.recovery_schemas import (
 from app.utils.formatters import paise_to_rupees
 
 router = APIRouter(prefix="/recovery", tags=["recovery"], dependencies=[Depends(require_api_key)])
+
+
+@router.post("/start")
+async def start_recovery(
+    payment_id: str,
+    db: Session = Depends(get_db),
+):
+    """Run the direct agent chain: analyze, select, execute, and audit."""
+    record = db.get(PaymentRecord, payment_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"payment '{payment_id}' not found")
+    payment = record.to_domain()
+    analysis = await PaymentAnalyzerAgent().analyze(payment)
+    recommendation = await StrategySelectorAgent().select_strategy(payment, analysis)
+    execution = await ExecutionOrchestratorAgent().execute(payment, recommendation)
+    audit = await AuditSupervisorAgent().gate_and_log(payment, analysis, recommendation, execution)
+    return {
+        "payment_id": payment_id,
+        "chain": [
+            {"agent": "PaymentAnalyzer", "result": analysis.model_dump(mode="json")},
+            {"agent": "StrategySelector", "result": recommendation.model_dump(mode="json")},
+            {"agent": "ExecutionOrchestrator", "result": execution.model_dump(mode="json")},
+            {"agent": "AuditSupervisor", "result": audit.model_dump(mode="json")},
+        ],
+        "final_status": audit.approval_status,
+        "timestamp": audit.timestamp,
+    }
 
 
 @router.post("/detect", response_model=DetectResponse)

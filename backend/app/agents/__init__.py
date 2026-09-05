@@ -3,6 +3,8 @@
 from app.agents.base_agent import BaseAgent  # noqa: F401
 from app.agents.analyzer_agent import AnalyzerAgent  # noqa: F401
 from app.agents.payment_analyzer import AnalysisResult, PaymentAnalyzerAgent  # noqa: F401
+from app.agents.execution_orchestrator import ExecutionOrchestratorAgent, ExecutionResult  # noqa: F401
+from app.agents.audit_supervisor import AuditResult, AuditSupervisorAgent  # noqa: F401
 from app.agents.strategy_selector import StrategyRecommendation, StrategySelectorAgent  # noqa: F401
 from app.agents.strategist_agent import StrategistAgent  # noqa: F401
 from app.agents.executor_agent import ExecutorAgent  # noqa: F401

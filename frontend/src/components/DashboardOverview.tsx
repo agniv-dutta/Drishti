@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useDashboardStore } from '../store/dashboardStore';
 import type { DashboardActivityItem, Payment } from '../types/dashboard';
+import PerformanceOverview from './PerformanceOverview';
 import './DashboardOverview.css';
 
 export type DashboardSection = 'overview' | 'payments' | 'recoveries' | 'analytics' | 'workflows' | 'audit-trail' | 'agent-operations' | 'settings';
@@ -770,6 +771,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
 
           {section === 'overview' && (
             <>
+              <PerformanceOverview period={periodDays === 30 ? 'monthly' : 'current'} />
               <section className="dashboard-metrics" aria-busy={isLoading}>
                 {cards.map((card, index) => (
                   <motion.article

@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.agents import get_supervisor
 from app.core.responses import elapsed_ms, error, measure, success
+from app.core.security import require_api_key
 from app.database.models import PaymentRecord, RecoveryRecord
 from app.database.session import get_db
 from app.models.payment import PaymentStatus, utcnow
@@ -21,7 +22,7 @@ from app.routes.dashboard import _build_journey_nodes, _latest_recovery_for_paym
 from app.schemas.payment_schemas import PaymentIngestRequest, PaymentIngestResponse
 from app.utils.formatters import paise_to_rupees
 
-router = APIRouter(prefix="/payments", tags=["payments"])
+router = APIRouter(prefix="/payments", tags=["payments"], dependencies=[Depends(require_api_key)])
 
 
 def _rupees(amount_paise: int) -> float:
