@@ -103,7 +103,7 @@ const WorkflowBuilder: React.FC = () => {
   };
 
   return <div className="workflow-page">
-    <header className="workflow-topbar"><a href="#/dashboard/overview" className="workflow-brand"><span>V</span>Drishti</a><nav><a href="#/dashboard/overview">Operations</a><a className="active" href="#/dashboard/workflows">AI Strategy Lab</a><a href="#/dashboard/analytics">Analytics</a></nav><a href="#/page/client-login" className="workflow-login">Client login</a></header>
+    <header className="workflow-topbar"><a href="#/dashboard/overview" className="workflow-brand"><span>D</span>Drishti</a><nav><a href="#/dashboard/overview">Operations</a><a className="active" href="#/dashboard/workflows">AI Strategy Lab</a><a href="#/dashboard/analytics">Analytics</a></nav><a href="#/page/client-login" className="workflow-login">Client login</a></header>
     <main className="workflow-main">
       <div className="workflow-breadcrumb"><a href="#/dashboard/overview"><ArrowLeft size={15} />Back to workspace</a><span>/</span><strong>AI Strategy Lab</strong></div>
       <section className="workflow-heading"><div><p className="workflow-kicker">AI-Powered Recovery</p><h1>Build intelligent recovery strategies</h1><p>AI learns what works and guides your workflow design with real-time performance data.</p></div><button type="button" className="workflow-save" onClick={() => void save()} disabled={status === 'saving'}><Save size={16} />{status === 'saving' ? 'Saving...' : 'Save strategy'}</button></section>

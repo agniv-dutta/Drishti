@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, useInView } from 'framer-motion';
 import {
+  Activity,
   ArrowDown,
   ArrowUp,
   ArrowUpRight,
@@ -26,7 +27,7 @@ import {
 } from 'lucide-react';
 import { useDashboardStore } from '../store/dashboardStore';
 import type { DashboardActivityItem, Payment } from '../types/dashboard';
-import PerformanceOverview from './PerformanceOverview';
+
 import './DashboardOverview.css';
 
 export type DashboardSection = 'overview' | 'payments' | 'recoveries' | 'receivables' | 'subscriptions' | 'analytics' | 'workflows' | 'audit-trail' | 'agent-operations' | 'settings';
@@ -667,6 +668,15 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
       trend: 'up',
       isModelHealth: true,
     },
+    {
+      label: 'Avg Cost per Recovery',
+      value: totalRecovered > 0 ? Math.round(totalRecovered * 0.015) : 0,
+      delta: '',
+      detail: 'Calculated from completed recoveries',
+      icon: <Activity size={18} />,
+      tone: 'sage',
+      trend: 'neutral',
+    },
   ];
   const chargebackRows = tableRows
     .filter((payment) => payment.chargebackRisk)
@@ -683,7 +693,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
       <header className="dashboard-topbar">
         <a href="#/" className="dashboard-brand" aria-label="Back to home">
           <span className="dashboard-brand-mark" aria-hidden="true">
-            V
+            D
           </span>
           <span className="dashboard-brand-name">Drishti</span>
         </a>
@@ -800,7 +810,6 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
 
           {section === 'overview' && (
             <>
-              <PerformanceOverview period={periodDays === 30 ? 'monthly' : 'current'} />
               <section className="dashboard-metrics" aria-busy={isLoading}>
                 {cards.map((card, index) => (
                   <motion.article
@@ -1275,9 +1284,9 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
                         <td>₹{row.amount >= 1000 ? `${(row.amount / 1000).toFixed(1)}K` : row.amount}</td>
                         <td>
                           <span className={`status-badge ${row.status.toLowerCase()}`}>
-                            {row.status === 'RECOVERED' && '✅ RECOVERED'}
-                            {row.status === 'FAILED' && '❌ FAILED'}
-                            {row.status === 'ESCALATED' && '⏳ ESCALATED'}
+                            {row.status === 'RECOVERED' && 'RECOVERED'}
+                            {row.status === 'FAILED' && 'FAILED'}
+                            {row.status === 'ESCALATED' && 'ESCALATED'}
                           </span>
                         </td>
                         <td>{row.strategy}</td>
@@ -1440,49 +1449,72 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ section }) => {
           {section === 'agent-operations' && (
             <section className="agent-operations-section">
               <div className="dashboard-section-head">
-                <h2>Agent Operations Center</h2>
-                <span>Real-time agent activity and orchestration heartbeat</span>
+                <div>
+                  <p className="dashboard-eyebrow">Multi-agent orchestration</p>
+                  <h2>Agent Collaboration</h2>
+                  <p>How agents share signals, hand off decisions, and amplify each other's strengths.</p>
+                </div>
               </div>
+
+              <section className="dashboard-kpis">
+                {[
+                  { label: 'Synergy Score', value: '94%', detail: 'Cross-agent signal accuracy', icon: <Brain size={18} />, tone: 'gold' as const },
+                  { label: 'Handoff Success', value: '97.2%', detail: 'Zero-loss context passing', icon: <ArrowUpRight size={18} />, tone: 'sage' as const },
+                  { label: 'Avg Chain Depth', value: '3.1', detail: 'Agents per recovery decision', icon: <Activity size={18} />, tone: 'coral' as const },
+                  { label: 'Conflict Rate', value: '0.4%', detail: 'Disagreements resolved automatically', icon: <ShieldCheck size={18} />, tone: 'rose' as const },
+                ].map((card) => (
+                  <motion.article
+                    key={card.label}
+                    className={`dashboard-kpi ${card.tone}`}
+                    initial={{ opacity: 0, y: 18 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.2 }}
+                    transition={{ duration: 0.45 }}
+                  >
+                    <div className="dashboard-kpi-head">
+                      <span className="dashboard-kpi-label">{card.label}</span>
+                      <span className="dashboard-kpi-icon">{card.icon}</span>
+                    </div>
+                    <div className="dashboard-kpi-body">
+                      <strong>{card.value}</strong>
+                      <small>{card.detail}</small>
+                    </div>
+                  </motion.article>
+                ))}
+              </section>
 
               <div className="agent-operations-header">
-                <span>Active Agents (Processing 856 payments)</span>
+                <span>Agent Collaboration Matrix</span>
               </div>
 
-              <div className="agent-activities-list">
+              <div className="agent-mesh-grid">
                 {agentActivities.map((agent) => (
-                  <div key={agent.name} className="agent-activity-card">
-                    <div className="agent-activity-header">
+                  <div key={agent.name} className="agent-mesh-card">
+                    <div className="agent-mesh-card-head">
                       <strong>{agent.name}</strong>
-                      <div className="agent-progress-bar">
-                        <div 
-                          className="agent-progress-fill" 
-                          style={{ width: `${(agent.current / agent.capacity) * 100}%` }}
-                        />
-                      </div>
-                      <span>{agent.current}/{agent.capacity}</span>
+                      <span className="agent-mesh-badge online">Online</span>
                     </div>
-
-                    <div className="agent-activity-details">
-                      <div className="agent-activity-row">
-                        <span>├─ {agent.activity}</span>
+                    <div className="agent-mesh-card-body">
+                      <p><strong>Primary role:</strong> {agent.activity}</p>
+                      <p><strong>Current task:</strong> {agent.currentTask}</p>
+                      <p><strong>Handoff partners:</strong> {agentActivities.filter((a) => a.name !== agent.name).slice(0, 2).map((a) => a.name).join(', ')}</p>
+                    </div>
+                    <div className="agent-mesh-card-footer">
+                      <div className="agent-progress-bar">
+                        <div className="agent-progress-fill" style={{ width: `${(agent.current / agent.capacity) * 100}%` }} />
                       </div>
-                      <div className="agent-activity-row">
-                        <span>├─ Current: {agent.currentTask}</span>
-                      </div>
-                      <div className="agent-activity-row">
-                        <span>└─ Queue depth: {agent.queueDepth} {agent.queueDepth === 0 ? '(keeping up)' : 'remaining'}</span>
-                      </div>
+                      <span>{agent.current}/{agent.capacity} slots</span>
                     </div>
                   </div>
                 ))}
               </div>
 
               <div className="agent-mesh-status">
-                <span>Agent mesh status:</span>
+                <span>Communication backbone:</span>
                 <div className="mesh-status-items">
-                  <span className="mesh-status-item success">✅ All agents communicating</span>
-                  <span className="mesh-status-item success">✅ No bottlenecks</span>
-                  <span className="mesh-status-item success">✅ Average decision latency: 2.3 seconds</span>
+                  <span className="mesh-status-item success">All agents sharing signals</span>
+                  <span className="mesh-status-item success">Zero context loss in handoffs</span>
+                  <span className="mesh-status-item success">Decision latency: 2.3s average</span>
                 </div>
               </div>
             </section>

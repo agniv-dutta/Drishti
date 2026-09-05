@@ -160,7 +160,7 @@ const FeaturePage: React.FC<FeaturePageProps> = ({ slug }) => {
       <header className="feature-topbar">
         <a href="#/" className="feature-brand">
           <span className="feature-brand-mark" aria-hidden="true">
-            V
+            D
           </span>
           <span>Drishti</span>
         </a>
