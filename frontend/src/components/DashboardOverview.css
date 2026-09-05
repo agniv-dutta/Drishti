@@ -1197,6 +1197,7 @@
 .status-badge {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   padding: 4px 10px;
   border-radius: 999px;
@@ -1204,6 +1205,11 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  flex-shrink: 0;
 }
 
 .status-badge.recovered {
@@ -1525,28 +1531,37 @@
   cursor: pointer;
   text-align: left;
   margin-bottom: 12px;
+  min-width: 0;
 }
 
 .payment-card-header {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .payment-id {
   color: #ffffff;
   font-size: 14px;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .payment-amount {
   color: rgba(247, 240, 234, 0.7);
   font-size: 13px;
+  white-space: nowrap;
 }
 
 .payment-card-status {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
+  max-width: 55%;
 }
 
 .payment-card-ai {

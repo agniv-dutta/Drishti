@@ -99,6 +99,7 @@ interface DashboardStore {
   journey: DashboardJourney | null;
   isLoading: boolean;
   error: string | null;
+  periodDays: number;
 
   fetchPayments: () => Promise<void>;
   fetchJourney: (paymentId: string) => Promise<void>;
@@ -106,6 +107,7 @@ interface DashboardStore {
   updatePayment: (id: string, payment: Partial<Payment>) => void;
   setRecoveryMetrics: (rate: number, total: number) => void;
   selectPayment: (paymentId: string) => Promise<void>;
+  setPeriod: (days: number) => void;
 }
 
 const mapPayment = (payment: DashboardOverviewApi['active_recoveries'][number]): Payment => ({
@@ -199,11 +201,12 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   journey: null,
   isLoading: false,
   error: null,
+  periodDays: 7,
 
   fetchPayments: async () => {
     set({ isLoading: true, error: null });
     try {
-      const response = await dashboardAPI.getOverview(get().selectedPaymentId ?? undefined, 5);
+      const response = await dashboardAPI.getOverview(get().selectedPaymentId ?? undefined, 50, get().periodDays);
       const overview = response.data as DashboardOverviewApi;
       set({
         payments: overview.active_recoveries.map(mapPayment),
@@ -243,7 +246,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   loadDashboard: async (paymentId?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await dashboardAPI.getOverview(paymentId, 5);
+      const response = await dashboardAPI.getOverview(paymentId, 50, get().periodDays);
       const overview = response.data as DashboardOverviewApi;
       const nextSelectedPaymentId = paymentId ?? overview.selected_payment_id ?? overview.active_recoveries[0]?.id ?? null;
 
@@ -288,5 +291,9 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
 
   selectPayment: async (paymentId: string) => {
     await get().fetchJourney(paymentId);
+  },
+
+  setPeriod: (days: number) => {
+    set({ periodDays: days });
   },
 }));

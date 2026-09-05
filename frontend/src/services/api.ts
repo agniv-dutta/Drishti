@@ -39,11 +39,12 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 });
 
 export const dashboardAPI = {
-  getOverview: (paymentId?: string, limit = 5) =>
+  getOverview: (paymentId?: string, limit = 5, periodDays = 7) =>
     apiClient.get<unknown>('/dashboard/overview', {
       params: {
         payment_id: paymentId,
         limit,
+        period_days: periodDays,
       },
     }),
 

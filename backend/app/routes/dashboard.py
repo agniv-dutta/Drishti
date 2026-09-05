@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import require_api_key
 from app.database.models import PaymentRecord, RecoveryRecord
+from app.models.payment import utcnow
 from app.database.session import get_db
 from app.models.chargeback import ChargebackRiskAssessment
 from app.models.recovery import RecoveryStatus
@@ -234,12 +235,15 @@ def _build_journey_nodes(payment: PaymentRecord, recovery: Optional[RecoveryReco
 @router.get("/overview", response_model=DashboardOverviewResponse)
 async def get_overview(
     payment_id: Optional[str] = Query(default=None),
-    limit: int = Query(default=5, ge=1, le=20),
+    limit: int = Query(default=5, ge=1, le=50),
+    period_days: int = Query(default=7, ge=1, le=365),
     db: Session = Depends(get_db),
 ) -> DashboardOverviewResponse:
+    cutoff = utcnow() - timedelta(days=period_days)
     records = (
         db.query(RecoveryRecord, PaymentRecord)
         .join(PaymentRecord, PaymentRecord.id == RecoveryRecord.payment_id)
+        .filter(RecoveryRecord.created_at >= cutoff)
         .order_by(RecoveryRecord.updated_at.desc())
         .limit(limit)
         .all()
@@ -249,7 +253,11 @@ async def get_overview(
         for recovery, payment in records
     ]
 
-    total_payments_processed = db.query(func.count(PaymentRecord.id)).scalar() or 0
+    total_payments_processed = (
+        db.query(func.count(PaymentRecord.id))
+        .filter(PaymentRecord.created_at >= cutoff)
+        .scalar() or 0
+    )
     total_recovered_paise = sum(
         recovery.recovered_amount_paise
         for recovery, _ in records
